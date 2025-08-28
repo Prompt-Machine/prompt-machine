@@ -18,30 +18,14 @@ if [ "$EUID" -ne 0 ]; then
     exit 1
 fi
 
-# Step 1: Update Nginx configurations for domains
+# Step 1: Update Nginx configurations for domains (HTTP first, SSL will be added by Certbot)
 echo "📝 Step 1: Creating domain-specific Nginx configurations..."
 
-# API configuration (api.prompt-machine.com)
+# API configuration (api.prompt-machine.com) - HTTP only for now
 cat > /etc/nginx/sites-available/api.prompt-machine.com << 'EOF'
 server {
     listen 80;
     server_name api.prompt-machine.com;
-    
-    # Redirect HTTP to HTTPS
-    return 301 https://$server_name$request_uri;
-}
-
-server {
-    listen 443 ssl;
-    server_name api.prompt-machine.com;
-    
-    # SSL certificates will be added by Certbot
-    
-    # Security headers
-    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
-    add_header X-Frame-Options "DENY" always;
-    add_header X-Content-Type-Options "nosniff" always;
-    add_header X-XSS-Protection "1; mode=block" always;
     
     # API proxy
     location / {
@@ -69,27 +53,11 @@ server {
 }
 EOF
 
-# App configuration (app.prompt-machine.com)
+# App configuration (app.prompt-machine.com) - HTTP only for now
 cat > /etc/nginx/sites-available/app.prompt-machine.com << 'EOF'
 server {
     listen 80;
     server_name app.prompt-machine.com;
-    
-    # Redirect HTTP to HTTPS
-    return 301 https://$server_name$request_uri;
-}
-
-server {
-    listen 443 ssl;
-    server_name app.prompt-machine.com;
-    
-    # SSL certificates will be added by Certbot
-    
-    # Security headers
-    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
-    add_header X-Frame-Options "SAMEORIGIN" always;
-    add_header X-Content-Type-Options "nosniff" always;
-    add_header X-XSS-Protection "1; mode=block" always;
     
     # Frontend files
     root /home/ubuntu/prompt-machine/frontend;
@@ -152,58 +120,102 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
+# Reload Nginx
+systemctl reload nginx
+
 echo -e "${GREEN}✓ Sites enabled${NC}"
 
-# Step 3: Generate SSL certificates
+# Step 3: Check DNS
 echo ""
-echo "🔒 Step 3: Generating SSL certificates with Let's Encrypt..."
+echo "🌐 Step 3: Checking DNS configuration..."
 echo ""
-echo -e "${YELLOW}Make sure your DNS is pointing to this server:${NC}"
-echo "- api.prompt-machine.com -> $(curl -s ifconfig.me)"
-echo "- app.prompt-machine.com -> $(curl -s ifconfig.me)"
+SERVER_IP=$(curl -s ifconfig.me)
+echo "Your server IP: ${YELLOW}$SERVER_IP${NC}"
 echo ""
-echo "Press Enter to continue or Ctrl+C to cancel..."
-read
+echo "Checking DNS records..."
+
+# Check API domain
+API_IP=$(dig +short api.prompt-machine.com | tail -n1)
+if [ "$API_IP" = "$SERVER_IP" ]; then
+    echo -e "${GREEN}✓ api.prompt-machine.com correctly points to this server${NC}"
+else
+    echo -e "${RED}✗ api.prompt-machine.com points to: $API_IP (not this server!)${NC}"
+    echo "Please update your DNS records and wait for propagation."
+    exit 1
+fi
+
+# Check App domain
+APP_IP=$(dig +short app.prompt-machine.com | tail -n1)
+if [ "$APP_IP" = "$SERVER_IP" ]; then
+    echo -e "${GREEN}✓ app.prompt-machine.com correctly points to this server${NC}"
+else
+    echo -e "${RED}✗ app.prompt-machine.com points to: $APP_IP (not this server!)${NC}"
+    echo "Please update your DNS records and wait for propagation."
+    exit 1
+fi
+
+# Step 4: Generate SSL certificates
+echo ""
+echo "🔒 Step 4: Generating SSL certificates with Let's Encrypt..."
+echo ""
 
 # Install certbot if not already installed
 if ! command -v certbot &> /dev/null; then
+    echo "Installing Certbot..."
     snap install --classic certbot
     ln -s /snap/bin/certbot /usr/bin/certbot
 fi
 
 # Generate certificates
 echo "Generating certificate for api.prompt-machine.com..."
-certbot --nginx -d api.prompt-machine.com --non-interactive --agree-tos -m admin@prompt-machine.com
+certbot --nginx -d api.prompt-machine.com --non-interactive --agree-tos -m admin@prompt-machine.com --redirect
+
+if [ $? -ne 0 ]; then
+    echo -e "${RED}Failed to generate certificate for api.prompt-machine.com${NC}"
+    echo "Check that your DNS is properly configured and port 80 is accessible."
+    exit 1
+fi
 
 echo ""
 echo "Generating certificate for app.prompt-machine.com..."
-certbot --nginx -d app.prompt-machine.com --non-interactive --agree-tos -m admin@prompt-machine.com
+certbot --nginx -d app.prompt-machine.com --non-interactive --agree-tos -m admin@prompt-machine.com --redirect
 
-# Reload Nginx
+if [ $? -ne 0 ]; then
+    echo -e "${RED}Failed to generate certificate for app.prompt-machine.com${NC}"
+    echo "Check that your DNS is properly configured and port 80 is accessible."
+    exit 1
+fi
+
+# Reload Nginx with new certificates
 systemctl reload nginx
 
 echo -e "${GREEN}✓ SSL certificates generated${NC}"
 
-# Step 4: Update environment file
+# Step 5: Update environment file
 echo ""
-echo "🔧 Step 4: Updating environment configuration..."
+echo "🔧 Step 5: Updating environment configuration..."
 
 # Update the .env file with correct URLs
-sed -i 's|APP_URL=.*|APP_URL=https://app.prompt-machine.com|' /home/ubuntu/prompt-machine/.env
-
-# Add new environment variables if they don't exist
-if ! grep -q "API_URL" /home/ubuntu/prompt-machine/.env; then
-    echo "API_URL=https://api.prompt-machine.com" >> /home/ubuntu/prompt-machine/.env
+if [ -f /home/ubuntu/prompt-machine/.env ]; then
+    sed -i 's|APP_URL=.*|APP_URL=https://app.prompt-machine.com|' /home/ubuntu/prompt-machine/.env
+    
+    # Add new environment variables if they don't exist
+    if ! grep -q "API_URL" /home/ubuntu/prompt-machine/.env; then
+        echo "API_URL=https://api.prompt-machine.com" >> /home/ubuntu/prompt-machine/.env
+    fi
+    
+    echo -e "${GREEN}✓ Environment updated${NC}"
+else
+    echo -e "${YELLOW}⚠️  .env file not found at /home/ubuntu/prompt-machine/.env${NC}"
 fi
 
-echo -e "${GREEN}✓ Environment updated${NC}"
-
-# Step 5: Update frontend to use HTTPS API
+# Step 6: Update frontend to use HTTPS API
 echo ""
-echo "📝 Step 5: Updating frontend configuration..."
+echo "📝 Step 6: Updating frontend configuration..."
 
-# Update the frontend test to use the correct API URL
-cat > /home/ubuntu/prompt-machine/frontend/index.html << 'EOF'
+# Create an updated frontend if the directory exists
+if [ -d /home/ubuntu/prompt-machine/frontend ]; then
+    cat > /home/ubuntu/prompt-machine/frontend/index.html << 'EOF'
 <!DOCTYPE html>
 <html>
 <head>
@@ -214,47 +226,67 @@ cat > /home/ubuntu/prompt-machine/frontend/index.html << 'EOF'
     <div class="container mx-auto p-8">
         <h1 class="text-4xl font-bold mb-8">🚀 Prompt Machine MVP</h1>
         <div class="bg-white p-6 rounded-lg shadow">
-            <h2 class="text-2xl mb-4">Setup Complete! ✅</h2>
-            <p class="mb-4">Your MVP is ready. Click below to test the API:</p>
+            <h2 class="text-2xl mb-4">SSL Setup Complete! 🔒</h2>
+            <p class="mb-4">Your application is now secured with HTTPS. Test the API connection:</p>
             <button onclick="testAPI()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
-                Test API Connection
+                Test Secure API
             </button>
             <div id="result" class="mt-4"></div>
         </div>
         
-        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mt-6">
-            <p class="font-bold">✅ SSL is now configured!</p>
+        <div class="bg-green-50 border-l-4 border-green-400 p-4 mt-6">
+            <p class="font-bold">✅ Your secure endpoints:</p>
             <ul class="list-disc ml-6 mt-2">
                 <li>API: <a href="https://api.prompt-machine.com/health" target="_blank" class="text-blue-500 underline">https://api.prompt-machine.com/health</a></li>
-                <li>App: <a href="https://app.prompt-machine.com" target="_blank" class="text-blue-500 underline">https://app.prompt-machine.com</a></li>
+                <li>App: <a href="https://app.prompt-machine.com" class="text-blue-500 underline">https://app.prompt-machine.com</a></li>
             </ul>
         </div>
     </div>
     <script>
         async function testAPI() {
             const resultDiv = document.getElementById('result');
-            resultDiv.innerHTML = '<p class="text-gray-500">Testing...</p>';
+            resultDiv.innerHTML = '<p class="text-gray-500">Testing secure connection...</p>';
             
             try {
                 const res = await fetch('https://api.prompt-machine.com/health');
                 const data = await res.json();
                 resultDiv.innerHTML = 
-                    '<pre class="bg-gray-100 p-4 rounded overflow-auto">' + 
+                    '<div class="bg-green-100 p-4 rounded">' +
+                    '<p class="text-green-700 font-bold mb-2">✅ API is working!</p>' +
+                    '<pre class="bg-white p-2 rounded text-sm overflow-auto">' + 
                     JSON.stringify(data, null, 2) + 
-                    '</pre>';
+                    '</pre></div>';
             } catch (err) {
                 resultDiv.innerHTML = 
-                    '<p class="text-red-500">Error: ' + err.message + '</p>';
+                    '<div class="bg-red-100 p-4 rounded">' +
+                    '<p class="text-red-700">❌ Error: ' + err.message + '</p>' +
+                    '<p class="text-sm mt-2">Make sure the API server is running on port 3001</p>' +
+                    '</div>';
             }
         }
     </script>
 </body>
 </html>
 EOF
+    
+    chown ubuntu:ubuntu /home/ubuntu/prompt-machine/frontend/index.html
+    echo -e "${GREEN}✓ Frontend updated${NC}"
+else
+    echo -e "${YELLOW}⚠️  Frontend directory not found${NC}"
+fi
 
-chown ubuntu:ubuntu /home/ubuntu/prompt-machine/frontend/index.html
+# Step 7: Set up auto-renewal
+echo ""
+echo "⏰ Step 7: Setting up certificate auto-renewal..."
 
-echo -e "${GREEN}✓ Frontend updated${NC}"
+# Test renewal
+certbot renew --dry-run
+
+if [ $? -eq 0 ]; then
+    echo -e "${GREEN}✓ Auto-renewal is configured${NC}"
+else
+    echo -e "${YELLOW}⚠️  Auto-renewal test failed - check certbot timer${NC}"
+fi
 
 # Final summary
 echo ""
@@ -262,18 +294,23 @@ echo "✅ ============================================"
 echo "✅ SSL and Domain Setup Complete!"
 echo "✅ ============================================"
 echo ""
-echo "Your secure URLs are now:"
+echo "Your secure URLs:"
 echo "🔒 API: ${GREEN}https://api.prompt-machine.com${NC}"
 echo "🔒 App: ${GREEN}https://app.prompt-machine.com${NC}"
 echo ""
 echo "Next steps:"
 echo "1. Make sure your API server is running:"
-echo "   cd /home/ubuntu/prompt-machine/api && npm start"
+echo "   ${YELLOW}cd /home/ubuntu/prompt-machine/api && npm start${NC}"
+echo "   Or better, use PM2:"
+echo "   ${YELLOW}pm2 start ecosystem.config.js${NC}"
 echo ""
 echo "2. Test the API endpoint:"
-echo "   curl https://api.prompt-machine.com/health"
+echo "   ${YELLOW}curl https://api.prompt-machine.com/health${NC}"
 echo ""
 echo "3. Visit your app:"
-echo "   https://app.prompt-machine.com"
+echo "   ${YELLOW}https://app.prompt-machine.com${NC}"
 echo ""
-echo "SSL certificates will auto-renew via Let's Encrypt!"
+echo "📝 Notes:"
+echo "- SSL certificates will auto-renew every 90 days"
+echo "- HTTP traffic is automatically redirected to HTTPS"
+echo "- Ensure port 443 is open in your security group"
