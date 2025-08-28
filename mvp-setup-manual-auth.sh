@@ -1,16 +1,19 @@
 #!/bin/bash
-# Prompt Machine MVP - Complete Setup Script
-# This script sets up EVERYTHING including database
+# Prompt Machine MVP - Setup Script for Manual PostgreSQL Auth
+# This version works with servers that require interactive password entry
 
 set -e  # Exit on error
 
-echo "🚀 Prompt Machine MVP Complete Setup"
-echo "===================================="
+echo "🚀 Prompt Machine MVP Setup (Manual Auth Version)"
+echo "==============================================="
+echo ""
+echo "⚠️  NOTE: You'll need to enter PostgreSQL passwords when prompted"
 echo ""
 
 # Color codes
 GREEN='\033[0;32m'
 RED='\033[0;31m'
+YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # Function to check if command succeeded
@@ -36,7 +39,7 @@ check_status "Dependencies installed"
 echo ""
 echo "📁 Step 2: Creating project structure..."
 cd ~
-mkdir -p prompt-machine/{api/src/{routes,services,middleware},frontend,deployed-tools,logs}
+mkdir -p prompt-machine/{api/src/{routes,services,middleware},frontend,deployed-tools,logs,scripts}
 cd prompt-machine
 check_status "Directories created"
 
@@ -100,75 +103,64 @@ APP_URL=http://localhost:3001
 EOF
 check_status ".env file created"
 
-# Step 6: Database Setup
+# Step 6: Database Setup - Save SQL to file first
 echo ""
 echo "🗄️  Step 6: Setting up database..."
 echo ""
-echo "⚠️  MANUAL STEP REQUIRED:"
-echo "We need to create the database. Please run these commands when prompted:"
+echo -e "${YELLOW}Manual database setup required:${NC}"
 echo ""
-echo "When asked for password, enter: Uhr4ryPWey94oE1q7K"
-echo ""
-echo "Press Enter to continue..."
-read
 
-# Connect as postgres superuser
-psql -h sql.prompt-machine.com -U postgres << 'EOF'
--- Check if database exists
-SELECT 'Database exists' WHERE EXISTS (SELECT FROM pg_database WHERE datname = 'promptmachine_dbbeta');
-
--- Create user if doesn't exist
-DO $
+# Create database setup SQL file
+cat > scripts/setup-database.sql << 'EOF'
+-- Check and create user
+DO $$
 BEGIN
     IF NOT EXISTS (SELECT FROM pg_user WHERE usename = 'promptmachine_userbeta') THEN
         CREATE USER promptmachine_userbeta WITH PASSWORD '94oE1q7K';
-        RAISE NOTICE 'User created';
+        RAISE NOTICE 'User promptmachine_userbeta created';
     ELSE
-        RAISE NOTICE 'User already exists';
+        RAISE NOTICE 'User promptmachine_userbeta already exists';
     END IF;
-END$;
+END$$;
 
--- Create database if doesn't exist
-SELECT 'Creating database...' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'promptmachine_dbbeta');
+-- Check and create database
+SELECT 'Checking for database...' as status;
+\set ON_ERROR_STOP off
 CREATE DATABASE promptmachine_dbbeta OWNER promptmachine_userbeta;
+\set ON_ERROR_STOP on
 
 -- Grant permissions
 GRANT ALL PRIVILEGES ON DATABASE promptmachine_dbbeta TO promptmachine_userbeta;
 
 -- Show result
 \l promptmachine_dbbeta
+\echo 'Database setup complete!'
 EOF
+
+echo "Running database setup..."
+echo "When prompted for password, enter: ${YELLOW}Uhr4ryPWey94oE1q7K${NC}"
+echo ""
+echo "Press Enter when ready..."
+read
+
+psql -h sql.prompt-machine.com -U postgres -f scripts/setup-database.sql
 
 check_status "Database setup completed"
 
-# Create .pgpass file for automated connections
-echo ""
-echo "Creating .pgpass file for automated connections..."
-cat > ~/.pgpass << EOF
-sql.prompt-machine.com:5432:promptmachine_dbbeta:promptmachine_userbeta:94oE1q7K
-sql.prompt-machine.com:5432:postgres:postgres:Uhr4ryPWey94oE1q7K
-EOF
-chmod 600 ~/.pgpass
-check_status ".pgpass created"
-
-# Step 7: Create Database Schema
+# Step 7: Create Schema - Save SQL to file
 echo ""
 echo "📋 Step 7: Creating database schema..."
-echo ""
-echo "When prompted for password, enter: 94oE1q7K"
-echo "Press Enter to continue..."
-read
 
-psql -h sql.prompt-machine.com -U promptmachine_userbeta -d promptmachine_dbbeta << 'EOF'
--- Drop tables if they exist (for clean setup)
+cat > scripts/create-schema.sql << 'EOF'
+-- Enable UUID extension
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- Drop existing tables for clean setup
 DROP TABLE IF EXISTS usage_logs CASCADE;
 DROP TABLE IF EXISTS conversations CASCADE;
 DROP TABLE IF EXISTS prompts CASCADE;
 DROP TABLE IF EXISTS projects CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
-
--- Enable UUID extension
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- Users (simple version)
 CREATE TABLE users (
@@ -205,7 +197,7 @@ CREATE TABLE conversations (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Usage tracking (for billing)
+-- Usage tracking
 CREATE TABLE usage_logs (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     project_id UUID REFERENCES projects(id),
@@ -222,8 +214,19 @@ CREATE INDEX idx_usage_project ON usage_logs(project_id);
 -- Insert default admin (temporary password)
 INSERT INTO users (email, password_hash) 
 VALUES ('admin@prompt-machine.com', '$2b$10$TEMP_HASH_REPLACE_ME');
+
+\echo 'Schema created successfully!'
+\dt
 EOF
-check_status "Database schema created"
+
+echo ""
+echo "When prompted for password, enter: ${YELLOW}94oE1q7K${NC}"
+echo "Press Enter when ready..."
+read
+
+psql -h sql.prompt-machine.com -U promptmachine_userbeta -d promptmachine_dbbeta -f scripts/create-schema.sql
+
+check_status "Schema created"
 
 # Step 8: Create Basic API Server
 echo ""
@@ -232,9 +235,28 @@ cat > api/src/index.js << 'EOF'
 require('dotenv').config({ path: '../.env' });
 const express = require('express');
 const cors = require('cors');
+const { Pool } = require('pg');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+// Database connection
+const pool = new Pool({
+    host: process.env.DB_HOST,
+    port: process.env.DB_PORT,
+    database: process.env.DB_NAME,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD
+});
+
+// Test database connection
+pool.query('SELECT NOW()', (err, res) => {
+    if (err) {
+        console.error('Database connection error:', err);
+    } else {
+        console.log('✅ Database connected:', res.rows[0].now);
+    }
+});
 
 // Middleware
 app.use(cors());
@@ -242,11 +264,20 @@ app.use(express.json());
 
 // Health check
 app.get('/health', async (req, res) => {
-    res.json({ 
-        status: 'healthy',
-        timestamp: new Date().toISOString(),
-        message: 'MVP API is running!'
-    });
+    try {
+        const result = await pool.query('SELECT 1');
+        res.json({ 
+            status: 'healthy',
+            database: 'connected',
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        res.status(503).json({ 
+            status: 'unhealthy',
+            database: 'disconnected',
+            error: error.message
+        });
+    }
 });
 
 // Basic routes
@@ -268,7 +299,7 @@ app.listen(PORT, () => {
     console.log(`🔗 http://localhost:${PORT}`);
 });
 EOF
-check_status "Basic API created"
+check_status "API server created"
 
 # Step 9: Create Admin Password Hash Script
 echo ""
@@ -280,21 +311,36 @@ async function hashPassword() {
     const password = 'Uhr4ryPWey'; // Default admin password
     const hash = await bcrypt.hash(password, 10);
     
-    console.log('\nUse this SQL to update admin password:');
+    console.log('\n===========================================');
+    console.log('Admin Password Hash Generated!');
+    console.log('===========================================\n');
+    console.log('Copy this SQL and run it:\n');
     console.log(`UPDATE users SET password_hash = '${hash}' WHERE email = 'admin@prompt-machine.com';`);
-    console.log('\nDefault login credentials:');
+    console.log('\n===========================================');
+    console.log('Default login credentials:');
     console.log('Email: admin@prompt-machine.com');
     console.log('Password: Uhr4ryPWey');
     console.log('\n⚠️  CHANGE THIS PASSWORD AFTER FIRST LOGIN!');
+    console.log('===========================================\n');
 }
 
 hashPassword().catch(console.error);
 EOF
 check_status "Password script created"
 
-# Run the password hasher
-cd ..
-node scripts/hash-admin-password.js
+# Generate password hash
+echo ""
+echo "Generating admin password hash..."
+cd api && node ../scripts/hash-admin-password.js && cd ..
+
+# Save update script
+echo ""
+echo "Saving password update script..."
+HASH_OUTPUT=$(cd api && node -e "const bcrypt=require('bcrypt'); bcrypt.hash('Uhr4ryPWey',10).then(h=>console.log(h))" && cd ..)
+cat > scripts/update-admin-password.sql << EOF
+UPDATE users SET password_hash = '$HASH_OUTPUT' WHERE email = 'admin@prompt-machine.com';
+EOF
+echo -e "${GREEN}✓ Password update script saved to scripts/update-admin-password.sql${NC}"
 
 # Step 10: Create Nginx Configuration
 echo ""
@@ -302,7 +348,7 @@ echo "🌐 Step 10: Setting up Nginx..."
 sudo tee /etc/nginx/sites-available/prompt-machine > /dev/null << EOF
 server {
     listen 80;
-    server_name localhost;
+    server_name _;
 
     # Frontend
     location / {
@@ -329,7 +375,7 @@ server {
 EOF
 check_status "Nginx config created"
 
-# Enable the site
+# Enable site
 sudo ln -sf /etc/nginx/sites-available/prompt-machine /etc/nginx/sites-enabled/
 sudo rm -f /etc/nginx/sites-enabled/default
 sudo nginx -t && sudo systemctl reload nginx
@@ -347,24 +393,39 @@ cat > frontend/index.html << 'EOF'
 </head>
 <body class="bg-gray-100">
     <div class="container mx-auto p-8">
-        <h1 class="text-4xl font-bold mb-8">Prompt Machine MVP</h1>
+        <h1 class="text-4xl font-bold mb-8">🚀 Prompt Machine MVP</h1>
         <div class="bg-white p-6 rounded-lg shadow">
-            <h2 class="text-2xl mb-4">Quick Test</h2>
-            <button onclick="testAPI()" class="bg-blue-500 text-white px-4 py-2 rounded">
+            <h2 class="text-2xl mb-4">Setup Complete! ✅</h2>
+            <p class="mb-4">Your MVP is ready. Click below to test the API:</p>
+            <button onclick="testAPI()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
                 Test API Connection
             </button>
             <div id="result" class="mt-4"></div>
         </div>
+        
+        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mt-6">
+            <p class="font-bold">⚠️ Final Steps:</p>
+            <ol class="list-decimal ml-6 mt-2">
+                <li>Update admin password in database</li>
+                <li>Add Claude API key to .env file</li>
+                <li>Start the API server with: npm start</li>
+            </ol>
+        </div>
     </div>
     <script>
         async function testAPI() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<p class="text-gray-500">Testing...</p>';
+            
             try {
                 const res = await fetch('/api/health');
                 const data = await res.json();
-                document.getElementById('result').innerHTML = 
-                    '<pre class="bg-gray-100 p-4">' + JSON.stringify(data, null, 2) + '</pre>';
+                resultDiv.innerHTML = 
+                    '<pre class="bg-gray-100 p-4 rounded overflow-auto">' + 
+                    JSON.stringify(data, null, 2) + 
+                    '</pre>';
             } catch (err) {
-                document.getElementById('result').innerHTML = 
+                resultDiv.innerHTML = 
                     '<p class="text-red-500">Error: ' + err.message + '</p>';
             }
         }
@@ -374,26 +435,49 @@ cat > frontend/index.html << 'EOF'
 EOF
 check_status "Frontend created"
 
+# Create helper script for database access
+echo ""
+echo "📝 Creating database helper script..."
+cat > scripts/db-connect.sh << 'EOF'
+#!/bin/bash
+# Database connection helper
+
+echo "Connecting to Prompt Machine database..."
+echo "Password is: 94oE1q7K"
+echo ""
+psql -h sql.prompt-machine.com -U promptmachine_userbeta -d promptmachine_dbbeta
+EOF
+chmod +x scripts/db-connect.sh
+
 # Final Summary
 echo ""
-echo "✅ ====================================="
+echo ""
+echo "✅ =============================================="
 echo "✅ Prompt Machine MVP Setup Complete!"
-echo "✅ ====================================="
+echo "✅ =============================================="
 echo ""
-echo "📋 Next Steps:"
-echo "1. Add your Claude API key to .env file:"
-echo "   nano ~/prompt-machine/.env"
+echo "📋 FINAL STEPS (Manual):"
 echo ""
-echo "2. Update admin password in database:"
-echo "   Copy the SQL from above and run it"
+echo "1️⃣  Update admin password in database:"
+echo "   ${YELLOW}psql -h sql.prompt-machine.com -U promptmachine_userbeta -d promptmachine_dbbeta -f scripts/update-admin-password.sql${NC}"
+echo "   Password: ${YELLOW}94oE1q7K${NC}"
 echo ""
-echo "3. Start the API server:"
-echo "   cd ~/prompt-machine/api"
-echo "   npm start"
+echo "2️⃣  Add your Claude API key:"
+echo "   ${YELLOW}nano ~/prompt-machine/.env${NC}"
+echo "   Add your key to CLAUDE_API_KEY="
 echo ""
-echo "4. Visit your site:"
-echo "   http://your-server-ip"
+echo "3️⃣  Start the API server:"
+echo "   ${YELLOW}cd ~/prompt-machine/api${NC}"
+echo "   ${YELLOW}npm start${NC}"
 echo ""
-echo "5. Use Claude Code to build features!"
+echo "4️⃣  Visit your site:"
+echo "   ${YELLOW}http://$(hostname -I | awk '{print $1}')${NC}"
 echo ""
-echo "🚀 You're ready to start building!"
+echo "📁 Helper Scripts Created:"
+echo "   - scripts/db-connect.sh - Quick database connection"
+echo "   - scripts/update-admin-password.sql - Run this to set admin password"
+echo ""
+echo "💡 Since .pgpass doesn't work with your server, you'll need to"
+echo "   enter passwords manually when connecting to the database."
+echo ""
+echo "🚀 You're ready to build with Claude Code!"
