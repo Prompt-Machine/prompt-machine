@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prompt Machine MVP</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto p-8">
+        <h1 class="text-4xl font-bold mb-8">🚀 Prompt Machine MVP</h1>
+        <div class="bg-white p-6 rounded-lg shadow">
+            <h2 class="text-2xl mb-4">SSL Setup Complete! 🔒</h2>
+            <p class="mb-4">Your application is now secured with HTTPS. Test the API connection:</p>
+            <button onclick="testAPI()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                Test Secure API
+            </button>
+            <div id="result" class="mt-4"></div>
+        </div>
+        
+        <div class="bg-green-50 border-l-4 border-green-400 p-4 mt-6">
+            <p class="font-bold">✅ Your secure endpoints:</p>
+            <ul class="list-disc ml-6 mt-2">
+                <li>API: <a href="https://api.prompt-machine.com/health" target="_blank" class="text-blue-500 underline">https://api.prompt-machine.com/health</a></li>
+                <li>App: <a href="https://app.prompt-machine.com" class="text-blue-500 underline">https://app.prompt-machine.com</a></li>
+            </ul>
+        </div>
+    </div>
+    <script>
+        async function testAPI() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<p class="text-gray-500">Testing secure connection...</p>';
+            
+            try {
+                const res = await fetch('https://api.prompt-machine.com/health');
+                const data = await res.json();
+                resultDiv.innerHTML = 
+                    '<div class="bg-green-100 p-4 rounded">' +
+                    '<p class="text-green-700 font-bold mb-2">✅ API is working!</p>' +
+                    '<pre class="bg-white p-2 rounded text-sm overflow-auto">' + 
+                    JSON.stringify(data, null, 2) + 
+                    '</pre></div>';
+            } catch (err) {
+                resultDiv.innerHTML = 
+                    '<div class="bg-red-100 p-4 rounded">' +
+                    '<p class="text-red-700">❌ Error: ' + err.message + '</p>' +
+                    '<p class="text-sm mt-2">Make sure the API server is running on port 3001</p>' +
+                    '</div>';
+            }
+        }
+    </script>
+</body>
+</html>
