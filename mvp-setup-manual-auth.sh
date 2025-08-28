@@ -305,6 +305,7 @@ check_status "API server created"
 echo ""
 echo "🔐 Step 9: Creating admin password script..."
 cat > scripts/hash-admin-password.js << 'EOF'
+// This script must be run from the api directory where bcrypt is installed
 const bcrypt = require('bcrypt');
 
 async function hashPassword() {
@@ -328,18 +329,20 @@ hashPassword().catch(console.error);
 EOF
 check_status "Password script created"
 
-# Generate password hash
+# Generate password hash (must be in api directory for bcrypt to work)
 echo ""
 echo "Generating admin password hash..."
-cd api && node ../scripts/hash-admin-password.js && cd ..
+cd api
+node ../scripts/hash-admin-password.js
 
 # Save update script
 echo ""
 echo "Saving password update script..."
-HASH_OUTPUT=$(cd api && node -e "const bcrypt=require('bcrypt'); bcrypt.hash('Uhr4ryPWey',10).then(h=>console.log(h))" && cd ..)
-cat > scripts/update-admin-password.sql << EOF
+HASH_OUTPUT=$(node -e "const bcrypt=require('bcrypt'); bcrypt.hash('Uhr4ryPWey',10).then(h=>console.log(h))")
+cat > ../scripts/update-admin-password.sql << EOF
 UPDATE users SET password_hash = '$HASH_OUTPUT' WHERE email = 'admin@prompt-machine.com';
 EOF
+cd ..
 echo -e "${GREEN}✓ Password update script saved to scripts/update-admin-password.sql${NC}"
 
 # Step 10: Create Nginx Configuration
