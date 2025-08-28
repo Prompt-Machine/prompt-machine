@@ -1,0 +1,100 @@
+# Claude Code Configuration for Prompt Machine
+
+project:
+  name: "Prompt Machine"
+  type: "web-application"
+  version: "1.0.0-mvp"
+  description: "AI-powered platform for creating and deploying AI tools"
+
+stack:
+  backend:
+    runtime: "node"
+    version: "18"
+    framework: "express"
+    database: "postgresql"
+    orm: "raw-sql"
+  frontend:
+    framework: "react"  # planned
+    current: "html"     # current state
+  infrastructure:
+    server: "ubuntu-22.04"
+    webserver: "nginx"
+    process_manager: "pm2"
+    ssl: "letsencrypt"
+
+paths:
+  root: "~/prompt-machine"
+  api: "api/src"
+  frontend: "frontend"
+  deployments: "deployed-tools"
+  logs: "logs"
+  scripts: "scripts"
+
+database:
+  host: "sql.prompt-machine.com"
+  port: 5432
+  name: "promptmachine_dbbeta"
+  user: "promptmachine_userbeta"
+  auth_method: "md5"  # Important: PGPASSWORD doesn't work
+
+services:
+  api:
+    port: 3001
+    url: "https://api.prompt-machine.com"
+  app:
+    url: "https://app.prompt-machine.com"
+  tools:
+    pattern: "https://*.tool.prompt-machine.com"
+
+environment:
+  required:
+    - DB_HOST
+    - DB_PORT
+    - DB_NAME
+    - DB_USER
+    - DB_PASSWORD
+    - JWT_SECRET
+    - SESSION_SECRET
+    - CLAUDE_API_KEY
+  optional:
+    - API_URL
+    - APP_URL
+    - NODE_ENV
+
+current_issues:
+  - "SSL setup script failing - Nginx expects certs before they exist"
+  - "Admin password needs to be updated in database"
+  - "Auth routes not yet implemented"
+  - "Claude integration not yet implemented"
+
+next_tasks:
+  priority_1:
+    - "Fix SSL configuration script"
+    - "Update admin password hash"
+  priority_2:
+    - "Implement auth routes and middleware"
+    - "Create project CRUD operations"
+  priority_3:
+    - "Integrate Claude API"
+    - "Build prompt builder functionality"
+
+testing:
+  endpoints:
+    health_check: "https://api.prompt-machine.com/health"
+    login: "POST https://api.prompt-machine.com/api/auth/login"
+  credentials:
+    email: "admin@prompt-machine.com"
+    default_password: "Uhr4ryPWey"  # CHANGE THIS
+
+commands:
+  start_api: "cd ~/prompt-machine/api && npm start"
+  start_pm2: "cd ~/prompt-machine && pm2 start ecosystem.config.js"
+  view_logs: "pm2 logs prompt-machine-api"
+  connect_db: "./scripts/db-connect.sh"
+  test_api: "curl https://api.prompt-machine.com/health"
+
+notes:
+  - "Using MVP approach - launch in 2 weeks"
+  - "Single admin user for MVP"
+  - "Tools are static HTML (no dynamic backend yet)"
+  - "Focus on core functionality first"
