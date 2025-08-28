@@ -103,24 +103,63 @@ check_status ".env file created"
 # Step 6: Database Setup
 echo ""
 echo "🗄️  Step 6: Setting up database..."
-echo "Checking database connection..."
+echo ""
+echo "⚠️  MANUAL STEP REQUIRED:"
+echo "We need to create the database. Please run these commands when prompted:"
+echo ""
+echo "When asked for password, enter: Uhr4ryPWey94oE1q7K"
+echo ""
+echo "Press Enter to continue..."
+read
 
-# Test connection first
-PGPASSWORD=94oE1q7K psql -h sql.prompt-machine.com -U promptmachine_userbeta -d promptmachine_dbbeta -c "SELECT 1" > /dev/null 2>&1
-if [ $? -ne 0 ]; then
-    echo "Creating database..."
-    PGPASSWORD=Uhr4ryPWey94oE1q7K psql -h sql.prompt-machine.com -U postgres << EOF
+# Connect as postgres superuser
+psql -h sql.prompt-machine.com -U postgres << 'EOF'
+-- Check if database exists
+SELECT 'Database exists' WHERE EXISTS (SELECT FROM pg_database WHERE datname = 'promptmachine_dbbeta');
+
+-- Create user if doesn't exist
+DO $
+BEGIN
+    IF NOT EXISTS (SELECT FROM pg_user WHERE usename = 'promptmachine_userbeta') THEN
+        CREATE USER promptmachine_userbeta WITH PASSWORD '94oE1q7K';
+        RAISE NOTICE 'User created';
+    ELSE
+        RAISE NOTICE 'User already exists';
+    END IF;
+END$;
+
+-- Create database if doesn't exist
+SELECT 'Creating database...' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'promptmachine_dbbeta');
 CREATE DATABASE promptmachine_dbbeta OWNER promptmachine_userbeta;
+
+-- Grant permissions
+GRANT ALL PRIVILEGES ON DATABASE promptmachine_dbbeta TO promptmachine_userbeta;
+
+-- Show result
+\l promptmachine_dbbeta
 EOF
-    check_status "Database created"
-else
-    echo -e "${GREEN}✓ Database already exists${NC}"
-fi
+
+check_status "Database setup completed"
+
+# Create .pgpass file for automated connections
+echo ""
+echo "Creating .pgpass file for automated connections..."
+cat > ~/.pgpass << EOF
+sql.prompt-machine.com:5432:promptmachine_dbbeta:promptmachine_userbeta:94oE1q7K
+sql.prompt-machine.com:5432:postgres:postgres:Uhr4ryPWey94oE1q7K
+EOF
+chmod 600 ~/.pgpass
+check_status ".pgpass created"
 
 # Step 7: Create Database Schema
 echo ""
 echo "📋 Step 7: Creating database schema..."
-PGPASSWORD=94oE1q7K psql -h sql.prompt-machine.com -U promptmachine_userbeta -d promptmachine_dbbeta << 'EOF'
+echo ""
+echo "When prompted for password, enter: 94oE1q7K"
+echo "Press Enter to continue..."
+read
+
+psql -h sql.prompt-machine.com -U promptmachine_userbeta -d promptmachine_dbbeta << 'EOF'
 -- Drop tables if they exist (for clean setup)
 DROP TABLE IF EXISTS usage_logs CASCADE;
 DROP TABLE IF EXISTS conversations CASCADE;
