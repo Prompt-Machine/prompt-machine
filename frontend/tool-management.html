@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tool Management - Prompt Machine</title>
+    <link href="https://cdn.tailwindcss.com/2.2.19/tailwind.min.css" rel="stylesheet">
+    <script src="js/config.js"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b">
+        <div class="container mx-auto px-4 py-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900">Tool Management</h1>
+                    <p class="text-gray-600 mt-1">Manage your deployed AI tools</p>
+                </div>
+                <div>
+                    <a href="index.html" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                        Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-8">
+        <!-- Loading State -->
+        <div id="loadingState" class="text-center py-8">
+            <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <p class="mt-2 text-gray-600">Loading your tools...</p>
+        </div>
+
+        <!-- Error State -->
+        <div id="errorState" class="bg-red-50 border border-red-200 rounded-lg p-6 mb-6 hidden">
+            <div class="flex items-center">
+                <div class="text-red-400 text-xl mr-3">⚠️</div>
+                <div>
+                    <h3 class="text-red-800 font-semibold">Error Loading Tools</h3>
+                    <p class="text-red-600 mt-1" id="errorMessage"></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tools Grid -->
+        <div id="toolsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 hidden">
+            <!-- Tools will be populated here -->
+        </div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="text-center py-16 hidden">
+            <div class="text-6xl mb-4">🔧</div>
+            <h3 class="text-xl font-semibold text-gray-800 mb-2">No Tools Yet</h3>
+            <p class="text-gray-600 mb-6">Create your first AI tool to get started with tool management.</p>
+            <a href="tool-wizard-v3.html" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700">
+                Create Your First Tool
+            </a>
+        </div>
+    </main>
+
+    <!-- Status Change Modal -->
+    <div id="statusModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 max-w-md mx-4">
+            <div class="text-center">
+                <div id="modalIcon" class="text-4xl mb-4"></div>
+                <h3 id="modalTitle" class="text-lg font-semibold text-gray-800 mb-2"></h3>
+                <p id="modalMessage" class="text-gray-600 mb-6"></p>
+                <div class="flex gap-3 justify-center">
+                    <button id="cancelButton" class="px-4 py-2 text-gray-600 bg-gray-100 rounded hover:bg-gray-200">
+                        Cancel
+                    </button>
+                    <button id="confirmButton" class="px-4 py-2 text-white bg-blue-600 rounded hover:bg-blue-700">
+                        Confirm
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class ToolManager {
+            constructor() {
+                this.tools = [];
+                this.loadingState = document.getElementById('loadingState');
+                this.errorState = document.getElementById('errorState');
+                this.toolsGrid = document.getElementById('toolsGrid');
+                this.emptyState = document.getElementById('emptyState');
+                this.statusModal = document.getElementById('statusModal');
+                
+                this.init();
+            }
+
+            async init() {
+                await this.loadTools();
+                this.setupEventListeners();
+            }
+
+            setupEventListeners() {
+                // Modal close handlers
+                document.getElementById('cancelButton').addEventListener('click', () => {
+                    this.hideModal();
+                });
+
+                // Click outside modal to close
+                this.statusModal.addEventListener('click', (e) => {
+                    if (e.target === this.statusModal) {
+                        this.hideModal();
+                    }
+                });
+            }
+
+            async loadTools() {
+                try {
+                    this.showLoading();
+                    
+                    const response = await PMConfig.fetch('v3/tools');
+                    const data = await response.json();
+
+                    if (data.success) {
+                        this.tools = data.tools;
+                        this.renderTools();
+                    } else {
+                        throw new Error(data.error || 'Failed to load tools');
+                    }
+                } catch (error) {
+                    console.error('Error loading tools:', error);
+                    this.showError(error.message);
+                }
+            }
+
+            showLoading() {
+                this.loadingState.classList.remove('hidden');
+                this.errorState.classList.add('hidden');
+                this.toolsGrid.classList.add('hidden');
+                this.emptyState.classList.add('hidden');
+            }
+
+            showError(message) {
+                this.loadingState.classList.add('hidden');
+                this.errorState.classList.remove('hidden');
+                this.toolsGrid.classList.add('hidden');
+                this.emptyState.classList.add('hidden');
+                document.getElementById('errorMessage').textContent = message;
+            }
+
+            renderTools() {
+                this.loadingState.classList.add('hidden');
+                this.errorState.classList.add('hidden');
+
+                if (this.tools.length === 0) {
+                    this.emptyState.classList.remove('hidden');
+                    return;
+                }
+
+                this.toolsGrid.classList.remove('hidden');
+                this.toolsGrid.innerHTML = '';
+
+                this.tools.forEach(tool => {
+                    const toolCard = this.createToolCard(tool);
+                    this.toolsGrid.appendChild(toolCard);
+                });
+            }
+
+            createToolCard(tool) {
+                const card = document.createElement('div');
+                card.className = 'bg-white rounded-lg shadow-lg p-6 border';
+
+                const isDeployed = tool.deployed;
+                const isEnabled = tool.enabled;
+                const statusIcon = isDeployed && isEnabled ? '✅' : isDeployed && !isEnabled ? '🚫' : '⏳';
+                const statusText = isDeployed && isEnabled ? 'Live & Public' : isDeployed && !isEnabled ? 'Disabled' : 'Not Deployed';
+                const statusColor = isDeployed && isEnabled ? 'text-green-600' : isDeployed && !isEnabled ? 'text-red-600' : 'text-yellow-600';
+
+                card.innerHTML = `
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center">
+                            <div class="text-2xl mr-3">${statusIcon}</div>
+                            <div>
+                                <h3 class="text-lg font-semibold text-gray-800">${tool.name}</h3>
+                                <p class="text-sm ${statusColor}">${statusText}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3 mb-4">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600">Fields:</span>
+                            <span class="font-medium">${tool.fields_count}</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600">Created:</span>
+                            <span class="font-medium">${new Date(tool.created_at).toLocaleDateString()}</span>
+                        </div>
+                        ${tool.deployment_url ? `
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-600">URL:</span>
+                                <a href="${tool.deployment_url}" target="_blank" class="text-blue-600 hover:text-blue-800 font-medium">
+                                    View Tool →
+                                </a>
+                            </div>
+                        ` : ''}
+                    </div>
+
+                    <div class="border-t pt-4">
+                        <div class="flex gap-2">
+                            ${isDeployed ? `
+                                <button onclick="toolManager.toggleToolStatus('${tool.id}', ${isEnabled})" 
+                                        class="flex-1 px-3 py-2 text-sm rounded-lg font-medium ${isEnabled ? 'bg-red-100 text-red-700 hover:bg-red-200' : 'bg-green-100 text-green-700 hover:bg-green-200'}">
+                                    ${isEnabled ? '🚫 Disable' : '✅ Enable'}
+                                </button>
+                            ` : `
+                                <div class="flex-1 px-3 py-2 text-sm rounded-lg bg-gray-100 text-gray-500 text-center">
+                                    Deploy first to manage status
+                                </div>
+                            `}
+                            <button onclick="window.open('${tool.deployment_url || '#'}', '_blank')" 
+                                    class="px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 ${!tool.deployment_url ? 'opacity-50 cursor-not-allowed' : ''}"
+                                    ${!tool.deployment_url ? 'disabled' : ''}>
+                                🔗 View
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+                return card;
+            }
+
+            toggleToolStatus(toolId, currentlyEnabled) {
+                const tool = this.tools.find(t => t.id === toolId);
+                const action = currentlyEnabled ? 'disable' : 'enable';
+                const actionTitle = currentlyEnabled ? 'Disable Tool' : 'Enable Tool';
+                const actionIcon = currentlyEnabled ? '🚫' : '✅';
+                const actionMessage = currentlyEnabled 
+                    ? `Are you sure you want to disable "${tool.name}"? Visitors will see a maintenance page instead of your tool.`
+                    : `Are you sure you want to enable "${tool.name}"? It will be publicly accessible immediately.`;
+
+                this.showConfirmModal(actionIcon, actionTitle, actionMessage, async () => {
+                    try {
+                        const response = await PMConfig.fetch(`v3/tools/${toolId}/${action}`, {
+                            method: 'PUT'
+                        });
+
+                        const data = await response.json();
+
+                        if (data.success) {
+                            await this.loadTools(); // Reload to refresh the view
+                            this.hideModal();
+                        } else {
+                            throw new Error(data.error || `Failed to ${action} tool`);
+                        }
+                    } catch (error) {
+                        console.error(`Error ${action}ing tool:`, error);
+                        alert(`Failed to ${action} tool: ${error.message}`);
+                        this.hideModal();
+                    }
+                });
+            }
+
+            showConfirmModal(icon, title, message, confirmAction) {
+                document.getElementById('modalIcon').textContent = icon;
+                document.getElementById('modalTitle').textContent = title;
+                document.getElementById('modalMessage').textContent = message;
+                
+                // Remove old event listeners and add new one
+                const confirmButton = document.getElementById('confirmButton');
+                const newConfirmButton = confirmButton.cloneNode(true);
+                confirmButton.parentNode.replaceChild(newConfirmButton, confirmButton);
+                
+                newConfirmButton.addEventListener('click', confirmAction);
+                
+                this.statusModal.classList.remove('hidden');
+                this.statusModal.classList.add('flex');
+            }
+
+            hideModal() {
+                this.statusModal.classList.add('hidden');
+                this.statusModal.classList.remove('flex');
+            }
+        }
+
+        // Initialize when page loads
+        let toolManager;
+        document.addEventListener('DOMContentLoaded', () => {
+            toolManager = new ToolManager();
+        });
+    </script>
+</body>
+</html>

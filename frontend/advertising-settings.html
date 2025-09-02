@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advertising Settings - Prompt Machine v1.0.0</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <style>
+        .fade-in { animation: fadeIn 0.5s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .success-message { background: #10B981; color: white; padding: 12px; border-radius: 8px; margin: 16px 0; }
+        .error-message { background: #EF4444; color: white; padding: 12px; border-radius: 8px; margin: 16px 0; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-sm border-b">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <h1 class="text-2xl font-bold text-gray-900">🤖 Prompt Machine v1.0.0</h1>
+                    <span class="text-gray-400">|</span>
+                    <span class="text-lg text-gray-600">Advertising Settings</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="index.html" class="text-blue-600 hover:text-blue-800">← Back to Dashboard</a>
+                    <span class="text-sm text-gray-500" id="userInfo">Loading...</span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8">
+        <div class="max-w-4xl mx-auto">
+            
+            <!-- Header -->
+            <div class="bg-gradient-to-r from-green-600 to-blue-600 text-white rounded-xl p-8 mb-8 shadow-xl">
+                <div class="text-center">
+                    <h1 class="text-4xl font-bold mb-4">💰 Monetize Your AI Tools</h1>
+                    <p class="text-xl text-green-100">Add advertising to your deployed tools and start earning revenue</p>
+                </div>
+            </div>
+
+            <!-- Global Advertising Configuration -->
+            <div id="advertisingConfig">
+                <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-2xl font-bold text-gray-900">Global Advertising Settings</h2>
+                        <div class="text-sm text-gray-600 bg-blue-50 px-3 py-1 rounded">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Configure once, apply to all tools
+                        </div>
+                    </div>
+                    
+                    <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-lightbulb text-yellow-400"></i>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm text-yellow-700">
+                                    <strong>How it works:</strong> Set up your advertising codes here once. Then, for each individual tool, you can choose to enable or disable advertising with a simple toggle.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Provider Selection -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Advertising Provider</label>
+                        <div class="space-y-3">
+                            <label class="flex items-center">
+                                <input type="radio" name="provider" value="none" class="mr-3" checked>
+                                <span class="font-medium">No Advertising</span>
+                                <span class="text-gray-500 ml-2">(Default - keep your tool ad-free)</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="radio" name="provider" value="google-ads" class="mr-3">
+                                <span class="font-medium">Google AdSense</span>
+                                <span class="text-gray-500 ml-2">(Most popular - automatic ad optimization)</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="radio" name="provider" value="custom" class="mr-3">
+                                <span class="font-medium">Custom Ad Code</span>
+                                <span class="text-gray-500 ml-2">(Any advertising network or custom HTML/JS)</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Google AdSense Settings -->
+                    <div id="googleAdsSettings" class="hidden space-y-4 mb-6 p-4 bg-blue-50 rounded-lg">
+                        <h3 class="font-semibold text-gray-900">Google AdSense Settings</h3>
+                        
+                        <div>
+                            <label for="googleClientId" class="block text-sm font-medium text-gray-700 mb-2">
+                                AdSense Client ID *
+                            </label>
+                            <input type="text" id="googleClientId" 
+                                   class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                   placeholder="ca-pub-xxxxxxxxxxxxxxx"
+                                   pattern="ca-pub-[0-9]{16}">
+                            <p class="text-sm text-gray-500 mt-1">Find this in your AdSense account under "Ads" → "Overview"</p>
+                        </div>
+
+                        <div>
+                            <label for="googleSlotId" class="block text-sm font-medium text-gray-700 mb-2">
+                                Ad Unit Slot ID *
+                            </label>
+                            <input type="text" id="googleSlotId" 
+                                   class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                   placeholder="1234567890">
+                            <p class="text-sm text-gray-500 mt-1">Create an ad unit in AdSense and paste the slot ID here</p>
+                        </div>
+
+                        <!-- Ad Placement Options -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Ad Placement</label>
+                            <div class="space-y-2">
+                                <label class="flex items-center">
+                                    <input type="checkbox" id="showHeaderAd" class="mr-2">
+                                    <span>Header Ad (Above main content)</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" id="showFooterAd" class="mr-2" checked>
+                                    <span>Footer Ad (Below main content) - Recommended</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" id="showSidebarAd" class="mr-2">
+                                    <span>Sidebar Ad (Next to content) - Desktop only</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Custom Ad Code Settings -->
+                    <div id="customAdsSettings" class="hidden space-y-4 mb-6 p-4 bg-purple-50 rounded-lg">
+                        <h3 class="font-semibold text-gray-900">Custom Advertising Code</h3>
+                        
+                        <div>
+                            <label for="customHeaderCode" class="block text-sm font-medium text-gray-700 mb-2">
+                                Header Code (HTML/JavaScript)
+                            </label>
+                            <textarea id="customHeaderCode" rows="4" 
+                                      class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                                      placeholder="<!-- Paste your ad network's header code here -->"></textarea>
+                            <p class="text-sm text-gray-500 mt-1">This code will be inserted in the &lt;head&gt; section</p>
+                        </div>
+
+                        <div>
+                            <label for="customBodyCode" class="block text-sm font-medium text-gray-700 mb-2">
+                                Body Code (HTML/JavaScript)
+                            </label>
+                            <textarea id="customBodyCode" rows="4" 
+                                      class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                                      placeholder="<!-- Paste your ad network's body code here -->"></textarea>
+                            <p class="text-sm text-gray-500 mt-1">This code will be inserted in the page body</p>
+                        </div>
+                    </div>
+
+                    <!-- Enable/Disable -->
+                    <div class="mb-6">
+                        <label class="flex items-center">
+                            <input type="checkbox" id="enableAds" class="mr-3" checked>
+                            <span class="font-medium">Enable advertising on this tool</span>
+                        </label>
+                        <p class="text-sm text-gray-500 mt-1">You can temporarily disable ads without removing your settings</p>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex space-x-4">
+                        <button id="saveButton" class="bg-green-600 text-white px-8 py-3 rounded-lg hover:bg-green-700 font-medium">
+                            💾 Save Advertising Settings
+                        </button>
+                        <button id="previewButton" class="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 font-medium">
+                            👀 Preview Tool
+                        </button>
+                        <button id="removeButton" class="bg-red-600 text-white px-8 py-3 rounded-lg hover:bg-red-700 font-medium">
+                            🗑️ Remove All Ads
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Statistics -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-6">📊 Advertising Statistics</h2>
+                    
+                    <div id="statsLoading" class="text-center py-8 text-gray-500">
+                        Loading statistics...
+                    </div>
+
+                    <div id="statsContent" class="hidden grid md:grid-cols-3 gap-6">
+                        <div class="bg-blue-50 p-6 rounded-lg text-center">
+                            <div class="text-3xl font-bold text-blue-600" id="impressions">0</div>
+                            <div class="text-gray-600">Impressions</div>
+                            <div class="text-sm text-gray-500 mt-1">Total ad views</div>
+                        </div>
+                        <div class="bg-green-50 p-6 rounded-lg text-center">
+                            <div class="text-3xl font-bold text-green-600" id="clicks">0</div>
+                            <div class="text-gray-600">Clicks</div>
+                            <div class="text-sm text-gray-500 mt-1">Total ad clicks</div>
+                        </div>
+                        <div class="bg-purple-50 p-6 rounded-lg text-center">
+                            <div class="text-3xl font-bold text-purple-600" id="ctr">0%</div>
+                            <div class="text-gray-600">CTR</div>
+                            <div class="text-sm text-gray-500 mt-1">Click-through rate</div>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 text-sm text-gray-500">
+                        <p>📈 <strong>Pro Tip:</strong> Footer ads typically perform better than header ads and are less intrusive to users.</p>
+                        <p>⚠️ <strong>Note:</strong> Statistics tracking is basic. For detailed analytics, use your ad provider's dashboard.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Messages -->
+            <div id="messages"></div>
+        </div>
+    </main>
+
+    <!-- Version and Copyright Footer -->
+    <footer class="bg-gray-800 text-white py-6 mt-8">
+        <div class="container mx-auto px-4 text-center">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="mb-2 md:mb-0">
+                    <span class="text-lg font-semibold">Prompt Machine v1.0.0</span>
+                </div>
+                <div class="text-sm text-gray-300">
+                    Copyright © 2025 <a href="https://llnet.ca" target="_blank" class="text-blue-400 hover:text-blue-300">LLnet Inc</a> & 
+                    <a href="https://claude.ai/code" target="_blank" class="text-blue-400 hover:text-blue-300">Anthropic Claude Code</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/advertising-settings.js"></script>
+</body>
+</html>

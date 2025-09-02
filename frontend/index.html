@@ -3,51 +3,788 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Prompt Machine MVP</title>
+    <title>Prompt Machine v1.0.0 - Admin Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/js/config.js"></script>
+    <style>
+        /* Prevent flash of login screen */
+        body.loading #loginScreen,
+        body.loading #dashboardScreen {
+            display: none !important;
+        }
+        body.loading::before {
+            content: 'Loading...';
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.2rem;
+            color: #4F46E5;
+        }
+    </style>
 </head>
-<body class="bg-gray-100">
-    <div class="container mx-auto p-8">
-        <h1 class="text-4xl font-bold mb-8">🚀 Prompt Machine MVP</h1>
-        <div class="bg-white p-6 rounded-lg shadow">
-            <h2 class="text-2xl mb-4">SSL Setup Complete! 🔒</h2>
-            <p class="mb-4">Your application is now secured with HTTPS. Test the API connection:</p>
-            <button onclick="testAPI()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
-                Test Secure API
-            </button>
-            <div id="result" class="mt-4"></div>
-        </div>
-        
-        <div class="bg-green-50 border-l-4 border-green-400 p-4 mt-6">
-            <p class="font-bold">✅ Your secure endpoints:</p>
-            <ul class="list-disc ml-6 mt-2">
-                <li>API: <a href="https://api.prompt-machine.com/health" target="_blank" class="text-blue-500 underline">https://api.prompt-machine.com/health</a></li>
-                <li>App: <a href="https://app.prompt-machine.com" class="text-blue-500 underline">https://app.prompt-machine.com</a></li>
-            </ul>
+<body class="bg-gray-100 min-h-screen loading">
+    <!-- Login Screen -->
+    <div id="loginScreen" class="min-h-screen flex items-center justify-center">
+        <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
+            <h1 class="text-3xl font-bold text-center mb-6">🚀 Prompt Machine v1.0.0</h1>
+            <h2 class="text-xl text-center mb-6 text-gray-600">Admin Login</h2>
+            
+            <form id="loginForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <input 
+                        type="email" 
+                        id="email" 
+                        required
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        value="admin@prompt-machine.com"
+                    >
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                    <input 
+                        type="password" 
+                        id="password" 
+                        required
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        value="Uhr4ryPWey"
+                    >
+                </div>
+                
+                <button 
+                    type="submit" 
+                    class="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                    Login
+                </button>
+            </form>
+            
+            <div id="loginError" class="mt-4 text-red-600 text-sm hidden"></div>
+            <div id="loginLoading" class="mt-4 text-blue-600 text-sm hidden">
+                Logging in...
+            </div>
         </div>
     </div>
+
+    <!-- Dashboard Screen -->
+    <div id="dashboardScreen" class="hidden min-h-screen">
+        <nav class="bg-white shadow">
+            <div class="container mx-auto px-6 py-4">
+                <div class="flex justify-between items-center">
+                    <h1 class="text-2xl font-bold">🚀 Prompt Machine v1.0.0 Admin</h1>
+                    <div class="flex items-center space-x-4">
+                        <button onclick="openAIConfig()" class="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 text-sm">
+                            🤖 AI Config
+                        </button>
+                        <button onclick="openAdvertisingSettings()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 text-sm">
+                            💰 Advertising
+                        </button>
+                        <span id="userEmail" class="text-gray-600"></span>
+                        <button onclick="logout()" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">
+                            Logout
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <div class="container mx-auto px-6 py-8">
+            <!-- Welcome Section -->
+            <div class="bg-white p-6 rounded-lg shadow mb-6">
+                <h2 class="text-2xl font-bold mb-4">Welcome to Your Admin Dashboard</h2>
+                <p class="text-gray-600 mb-4">
+                    You're successfully logged in! The authentication system is working perfectly.
+                </p>
+                <div class="bg-green-50 border-l-4 border-green-400 p-4">
+                    <p class="font-bold text-green-800">✅ Authentication Status:</p>
+                    <ul class="list-disc ml-6 mt-2 text-green-700">
+                        <li>JWT token authentication working</li>
+                        <li>Secure API connection established</li>
+                        <li>Ready for project management implementation</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- API Test Section -->
+            <div class="bg-white p-6 rounded-lg shadow mb-6">
+                <h3 class="text-xl font-bold mb-4">API Connection Test</h3>
+                <div class="flex space-x-4">
+                    <button onclick="testHealthAPI()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                        Test Health API
+                    </button>
+                    <button onclick="testAuthAPI()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                        Test Auth API
+                    </button>
+                </div>
+                <div id="apiTestResult" class="mt-4"></div>
+            </div>
+
+
+            <!-- NEW: Prompt Engineer v6 - Multi-Step Project Builder -->
+            <div class="bg-gradient-to-r from-purple-50 to-blue-50 p-6 rounded-lg shadow-lg mb-6 border-2 border-purple-200">
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <h3 class="text-xl font-bold text-purple-800 flex items-center">
+                            🚀 Prompt Engineer v6 
+                            <span class="ml-2 bg-purple-200 text-purple-800 px-2 py-1 rounded text-sm font-semibold">Multi-Step Project Builder</span>
+                        </h3>
+                        <p class="text-sm text-purple-600 mt-1">Complete multi-step form builder with AI-powered project generation, drag-and-drop field management, project cloning, and analytics</p>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button onclick="createNewToolV6()" class="bg-gradient-to-r from-purple-500 to-blue-500 text-white px-6 py-3 rounded-lg hover:from-purple-600 hover:to-blue-600 font-semibold shadow-lg">
+                            🚀 Create Project
+                        </button>
+                        <button onclick="window.location.href='prompt-engineer-v6.html'" class="bg-white text-purple-600 border-2 border-purple-600 px-6 py-3 rounded-lg hover:bg-purple-50 font-semibold shadow-lg">
+                        📋 Create Form Tool
+                    </button>
+                </div>
+
+                <div id="projectsListV6" class="space-y-3">
+                    <div class="text-blue-600 text-center py-8">
+                        Loading v6 projects...
+                    </div>
+                </div>
+            </div>
+
+            <!-- Create Project Modal -->
+            <div id="createProjectModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md mx-4">
+                    <h3 class="text-xl font-bold mb-4">Create New AI Tool Project</h3>
+                    
+                    <form id="createProjectForm" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Project Name</label>
+                            <input 
+                                type="text" 
+                                id="projectName" 
+                                required
+                                placeholder="e.g. Story Writer, Email Assistant"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                            >
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Description (Optional)</label>
+                            <textarea 
+                                id="projectDescription" 
+                                placeholder="Brief description of your AI tool"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                                rows="3"
+                            ></textarea>
+                        </div>
+
+                        <div class="flex space-x-3 pt-4">
+                            <button 
+                                type="submit" 
+                                class="flex-1 bg-green-500 text-white py-2 px-4 rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500"
+                            >
+                                Create Project
+                            </button>
+                            <button 
+                                type="button" 
+                                onclick="hideCreateProject()"
+                                class="flex-1 bg-gray-500 text-white py-2 px-4 rounded-md hover:bg-gray-600"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <div id="createProjectError" class="mt-4 text-red-600 text-sm hidden"></div>
+                    <div id="createProjectLoading" class="mt-4 text-green-600 text-sm hidden">
+                        Creating project...
+                    </div>
+                </div>
+            </div>
+
+            <!-- Next Steps -->
+            <div class="bg-blue-50 border-l-4 border-blue-400 p-6 rounded-lg">
+                <h3 class="text-xl font-bold mb-4">🎯 Next Steps (Days 7-8)</h3>
+                <p class="mb-4">Ready to implement Claude Integration:</p>
+                <ul class="list-disc ml-6 space-y-1 text-blue-800">
+                    <li>Create Claude API service</li>
+                    <li>Build interactive prompt builder</li>
+                    <li>Connect projects to Claude conversations</li>
+                    <li>Generate AI tool interfaces</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Version and Copyright Footer -->
+        <footer class="bg-gray-800 text-white py-6 mt-8">
+            <div class="container mx-auto px-6 text-center">
+                <div class="flex flex-col md:flex-row justify-between items-center">
+                    <div class="mb-2 md:mb-0">
+                        <span class="text-lg font-semibold">Prompt Machine v1.0.0</span>
+                    </div>
+                    <div class="text-sm text-gray-300">
+                        Copyright © 2025 <a href="https://llnet.ca" target="_blank" class="text-blue-400 hover:text-blue-300">LLnet Inc</a> & 
+                        <a href="https://claude.ai/code" target="_blank" class="text-blue-400 hover:text-blue-300">Anthropic Claude Code</a>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
+
     <script>
-        async function testAPI() {
-            const resultDiv = document.getElementById('result');
-            resultDiv.innerHTML = '<p class="text-gray-500">Testing secure connection...</p>';
+        // Global variables
+        let authToken = localStorage.getItem('authToken');
+        let currentUser = null;
+
+        // Check if user is already logged in
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (authToken) {
+                try {
+                    const response = await PMConfig.fetch('api/auth/me');
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        currentUser = data.user;
+                        showDashboard();
+                    } else {
+                        // Token is invalid, remove it
+                        localStorage.removeItem('authToken');
+                        authToken = null;
+                        showLogin();
+                    }
+                } catch (error) {
+                    console.error('Auth check failed:', error);
+                    localStorage.removeItem('authToken');
+                    authToken = null;
+                    showLogin();
+                }
+            } else {
+                showLogin();
+            }
+        });
+
+        // Login form handler
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const errorDiv = document.getElementById('loginError');
+            const loadingDiv = document.getElementById('loginLoading');
+
+            // Show loading state
+            loadingDiv.classList.remove('hidden');
+            errorDiv.classList.add('hidden');
+
+            try {
+                const response = await PMConfig.fetch('api/auth/login', {
+                    method: 'POST',
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    // Store token and user info
+                    authToken = data.token;
+                    currentUser = data.user;
+                    localStorage.setItem('authToken', authToken);
+                    
+                    // Show dashboard
+                    showDashboard();
+                } else {
+                    // Show error
+                    errorDiv.textContent = data.error || 'Login failed';
+                    errorDiv.classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                errorDiv.textContent = 'Connection error. Please try again.';
+                errorDiv.classList.remove('hidden');
+            } finally {
+                loadingDiv.classList.add('hidden');
+            }
+        });
+
+        // Show login screen
+        function showLogin() {
+            document.body.classList.remove('loading');
+            document.getElementById('loginScreen').classList.remove('hidden');
+            document.getElementById('dashboardScreen').classList.add('hidden');
+        }
+
+        // Show dashboard screen
+        function showDashboard() {
+            document.body.classList.remove('loading');
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('dashboardScreen').classList.remove('hidden');
+            document.getElementById('userEmail').textContent = currentUser?.email || '';
+            
+            // Load V6 projects when dashboard is shown
+            loadProjectsV6();
+        }
+
+        // Logout function
+        function logout() {
+            localStorage.removeItem('authToken');
+            authToken = null;
+            currentUser = null;
+            showLogin();
+        }
+
+        function openAIConfig() {
+            window.location.href = '/ai-config.html';
+        }
+
+        function openAdvertisingSettings() {
+            window.location.href = '/advertising-settings.html';
+        }
+
+        // Test health API
+        async function testHealthAPI() {
+            const resultDiv = document.getElementById('apiTestResult');
+            resultDiv.innerHTML = '<p class="text-gray-500">Testing health API...</p>';
             
             try {
-                const res = await fetch('https://api.prompt-machine.com/health');
-                const data = await res.json();
+                const response = await PMConfig.fetch('health');
+                const data = await response.json();
+                
                 resultDiv.innerHTML = 
-                    '<div class="bg-green-100 p-4 rounded">' +
-                    '<p class="text-green-700 font-bold mb-2">✅ API is working!</p>' +
+                    '<div class="bg-green-100 p-4 rounded mt-4">' +
+                    '<p class="text-green-700 font-bold mb-2">✅ Health API Working!</p>' +
                     '<pre class="bg-white p-2 rounded text-sm overflow-auto">' + 
                     JSON.stringify(data, null, 2) + 
                     '</pre></div>';
-            } catch (err) {
+            } catch (error) {
                 resultDiv.innerHTML = 
-                    '<div class="bg-red-100 p-4 rounded">' +
-                    '<p class="text-red-700">❌ Error: ' + err.message + '</p>' +
-                    '<p class="text-sm mt-2">Make sure the API server is running on port 3001</p>' +
+                    '<div class="bg-red-100 p-4 rounded mt-4">' +
+                    '<p class="text-red-700">❌ Error: ' + error.message + '</p>' +
                     '</div>';
             }
         }
+
+        // Test auth API
+        async function testAuthAPI() {
+            const resultDiv = document.getElementById('apiTestResult');
+            resultDiv.innerHTML = '<p class="text-gray-500">Testing auth API...</p>';
+            
+            try {
+                const response = await PMConfig.fetch('api/auth/me');
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = 
+                        '<div class="bg-green-100 p-4 rounded mt-4">' +
+                        '<p class="text-green-700 font-bold mb-2">✅ Auth API Working!</p>' +
+                        '<pre class="bg-white p-2 rounded text-sm overflow-auto">' + 
+                        JSON.stringify(data, null, 2) + 
+                        '</pre></div>';
+                } else {
+                    resultDiv.innerHTML = 
+                        '<div class="bg-red-100 p-4 rounded mt-4">' +
+                        '<p class="text-red-700">❌ Auth Error: ' + (data.error || 'Unknown error') + '</p>' +
+                        '</div>';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = 
+                    '<div class="bg-red-100 p-4 rounded mt-4">' +
+                    '<p class="text-red-700">❌ Error: ' + error.message + '</p>' +
+                    '</div>';
+            }
+        }
+
+
+        // Show create project modal (keep for backwards compatibility)
+        function showCreateProject() {
+            document.getElementById('createProjectModal').classList.remove('hidden');
+            document.getElementById('projectName').focus();
+        }
+
+        // Hide create project modal
+        function hideCreateProject() {
+            document.getElementById('createProjectModal').classList.add('hidden');
+            document.getElementById('createProjectForm').reset();
+            document.getElementById('createProjectError').classList.add('hidden');
+        }
+
+        // Create project form handler
+        document.getElementById('createProjectForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const name = document.getElementById('projectName').value.trim();
+            const description = document.getElementById('projectDescription').value.trim();
+            const errorDiv = document.getElementById('createProjectError');
+            const loadingDiv = document.getElementById('createProjectLoading');
+
+            if (!name) {
+                errorDiv.textContent = 'Project name is required';
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+
+            // Show loading state
+            loadingDiv.classList.remove('hidden');
+            errorDiv.classList.add('hidden');
+
+            try {
+                const response = await PMConfig.fetch('api/projects', {
+                    method: 'POST',
+                    body: JSON.stringify({ name, description })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    // Add new project to list and refresh
+                    hideCreateProject();
+                    await loadProjects(); // Reload to get fresh data
+                } else {
+                    errorDiv.textContent = data.error || 'Failed to create project';
+                    errorDiv.classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error('Create project error:', error);
+                errorDiv.textContent = 'Connection error. Please try again.';
+                errorDiv.classList.remove('hidden');
+            } finally {
+                loadingDiv.classList.add('hidden');
+            }
+        });
+
+        // View project details - opens prompt builder
+        function viewProject(projectId) {
+            // Find the project to get its subdomain
+            const project = projects.find(p => p.id === projectId);
+            if (project && project.subdomain) {
+                // Open the live tool in new tab
+                window.open(`https://${project.subdomain}.tool.prompt-machine.com`, '_blank');
+            } else {
+                // Fallback to editor if no subdomain
+                window.location.href = `/prompt-builder.html?project=${projectId}&mode=edit`;
+            }
+        }
+
+        function editProject(projectId) {
+            window.location.href = `/prompt-builder.html?project=${projectId}&mode=edit`;
+        }
+
+        // Delete project
+        async function deleteProject(projectId, projectName) {
+            if (!confirm(`Are you sure you want to delete "${projectName}"?\n\nThis action cannot be undone.`)) {
+                return;
+            }
+
+            try {
+                const response = await PMConfig.fetch(`api/projects/${projectId}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    await loadProjects(); // Reload projects
+                } else {
+                    const data = await response.json();
+                    alert('Error deleting project: ' + (data.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Delete project error:', error);
+                alert('Error deleting project: Connection error');
+            }
+        }
+
+        // Utility functions
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString();
+        }
+
+        // ========================
+        // PROMPT ENGINEER V6 SYSTEM - MULTI-STEP PROJECT BUILDER
+        // ========================
+
+        let projectsV6 = [];
+
+        // Create new tool with v6 multi-step project builder
+        function createNewToolV6() {
+            window.location.href = '/prompt-engineer-v6.html';
+        }
+
+        // Load v6 projects
+        async function loadProjectsV6() {
+            const projectsList = document.getElementById('projectsListV6');
+            
+            try {
+                const response = await PMConfig.fetch('api/v6/projects');
+
+                if (response.ok) {
+                    const data = await response.json();
+                    projectsV6 = data.projects || [];
+                    renderProjectsV6();
+                } else {
+                    document.getElementById('projectsListV6').innerHTML = '<div class="text-red-500 text-center py-8">Failed to load v6 projects</div>';
+                }
+            } catch (error) {
+                console.error('Load v6 projects error:', error);
+                document.getElementById('projectsListV6').innerHTML = '<div class="text-red-500 text-center py-8">Error loading v6 projects</div>';
+            }
+        }
+
+        // Render v6 projects list
+        function renderProjectsV6() {
+            const projectsList = document.getElementById('projectsListV6');
+            
+            if (projectsV6.length === 0) {
+                projectsList.innerHTML = `
+                    <div class="text-center py-8">
+                        <div class="text-blue-400 text-6xl mb-4">🎯</div>
+                        <h4 class="text-lg font-semibold text-purple-600 mb-2">No multi-step projects yet</h4>
+                        <p class="text-purple-500 mb-4">Create your first AI tool with multi-step workflow builder!</p>
+                        <button onclick="createNewToolV6()" class="bg-gradient-to-r from-purple-500 to-blue-500 text-white px-6 py-2 rounded-lg hover:from-purple-600 hover:to-blue-600">
+                            🚀 Create Your First v6 Project
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+
+            const projectsHTML = projectsV6.map(project => `
+                <div class="border-2 border-blue-100 rounded-lg p-4 hover:shadow-lg transition-shadow bg-white">
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            <div class="flex items-center space-x-2 mb-2">
+                                <h4 class="text-lg font-semibold text-gray-900">${escapeHtml(project.name)}</h4>
+                                <span class="text-xs px-2 py-1 rounded-full bg-purple-100 text-purple-800">
+                                    v6 Multi-Step
+                                </span>
+                            </div>
+                            ${project.subdomain ? `<p class="text-sm text-blue-600 mb-2">🌐 https://${project.subdomain}.tool.prompt-machine.com</p>` : ''}
+                            <div class="flex items-center space-x-4 text-sm text-gray-600">
+                                <span class="flex items-center">
+                                    <span class="w-2 h-2 rounded-full bg-green-500 mr-1"></span>
+                                    Multi-step project
+                                </span>
+                                <span class="flex items-center">
+                                    <span class="w-2 h-2 rounded-full ${project.deployed ? 'bg-blue-500' : 'bg-yellow-500'} mr-1"></span>
+                                    ${project.deployed ? 'Live' : 'Draft'}
+                                </span>
+                                <span class="flex items-center">
+                                    <span class="w-2 h-2 rounded-full ${project.enabled !== false ? 'bg-green-500' : 'bg-red-500'} mr-1"></span>
+                                    ${project.enabled !== false ? 'Enabled' : 'Disabled'}
+                                </span>
+                                <span>${formatDate(project.created_at)}</span>
+                            </div>
+                        </div>
+                        <div class="flex space-x-2">
+                            ${project.deployed && project.subdomain ? `<button 
+                                onclick="window.open('https://${project.subdomain}.tool.prompt-machine.com', '_blank')" 
+                                class="bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600"
+                                title="Open live tool"
+                            >
+                                🌐 Open
+                            </button>` : ''}
+                            <button 
+                                onclick="editToolV6('${project.id}')" 
+                                class="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600"
+                                title="Edit tool with field recommendations"
+                            >
+                                🎯 Edit
+                            </button>
+                            <button 
+                                onclick="toggleProjectEnabled('${project.id}', '${escapeHtml(project.name)}', ${project.enabled !== false})" 
+                                class="px-3 py-1 rounded text-sm ${project.enabled !== false ? 'bg-orange-500 hover:bg-orange-600' : 'bg-green-500 hover:bg-green-600'} text-white"
+                                title="${project.enabled !== false ? 'Disable tool (keeps data)' : 'Enable tool'}"
+                            >
+                                ${project.enabled !== false ? '🔴 Disable' : '🟢 Enable'}
+                            </button>
+                            <button 
+                                onclick="toggleProjectAdvertising('${project.id}', '${escapeHtml(project.name)}', ${project.advertising_enabled || false})" 
+                                class="px-3 py-1 rounded text-sm ${project.advertising_enabled ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-500 hover:bg-gray-600'} text-white"
+                                title="${project.advertising_enabled ? 'Advertising enabled' : 'Advertising disabled'}"
+                            >
+                                ${project.advertising_enabled ? '💰 Ads On' : '💰 Ads Off'}
+                            </button>
+                            <button 
+                                onclick="deleteToolV6('${project.id}', '${escapeHtml(project.name)}')" 
+                                class="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600"
+                                title="Delete tool"
+                            >
+                                🗑️ Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            projectsList.innerHTML = projectsHTML;
+        }
+
+        // Edit/continue v5 tool
+        function editToolV5(toolId) {
+            window.location.href = `/prompt-engineer-v5.html?id=${toolId}`;
+        }
+
+        // Delete v5 tool
+        async function deleteToolV5(toolId, toolName) {
+            if (!confirm(`Are you sure you want to delete "${toolName}"?\n\nThis action cannot be undone.`)) {
+                return;
+            }
+
+            try {
+                const response = await PMConfig.fetch(`api/v5/tools/${toolId}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    await loadProjectsV5(); // Reload list
+                } else {
+                    const data = await response.json();
+                    alert('Error deleting tool: ' + (data.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Delete error:', error);
+                alert('Connection error. Please try again.');
+            }
+        }
+
+        // Edit v6 project
+        function editProjectV6(projectId) {
+            window.location.href = `/prompt-engineer-v6.html?id=${projectId}`;
+        }
+
+        // Delete v6 project
+        async function deleteProjectV6(projectId, projectName) {
+            if (confirm(`Are you sure you want to delete "${projectName}"? This action cannot be undone.`)) {
+                try {
+                    const response = await PMConfig.fetch(`api/v6/projects/${projectId}`, {
+                        method: 'DELETE'
+                    });
+
+                    if (response.ok) {
+                        await loadProjectsV6(); // Reload list
+                        showAlert('Project deleted successfully', 'success');
+                    } else {
+                        showAlert('Failed to delete project', 'error');
+                    }
+                } catch (error) {
+                    console.error('Delete project error:', error);
+                    showAlert('Error deleting project', 'error');
+                }
+            }
+        }
+
+        // Edit v6 project - redirect to project editor
+        function editToolV6(projectId) {
+            window.location.href = `/prompt-engineer-v6.html?id=${projectId}`;
+        }
+
+        // Toggle project enabled/disabled status
+        async function toggleProjectEnabled(projectId, projectName, currentEnabled) {
+            const action = currentEnabled ? 'disable' : 'enable';
+            const message = currentEnabled 
+                ? `Are you sure you want to disable "${projectName}"?\n\nThis will keep all data but make the tool inaccessible to users.`
+                : `Are you sure you want to enable "${projectName}"?`;
+                
+            if (confirm(message)) {
+                try {
+                    const response = await PMConfig.fetch(`api/v6/projects/${projectId}/toggle-enabled`, {
+                        method: 'PUT'
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        await loadProjectsV6(); // Reload list
+                        showAlert(data.message, 'success');
+                    } else {
+                        const data = await response.json();
+                        showAlert(data.error || `Failed to ${action} project`, 'error');
+                    }
+                } catch (error) {
+                    console.error('Toggle project error:', error);
+                    showAlert(`Error ${action}ing project`, 'error');
+                }
+            }
+        }
+
+        // Toggle project advertising on/off
+        async function toggleProjectAdvertising(projectId, projectName, currentEnabled) {
+            const action = currentEnabled ? 'disable' : 'enable';
+            const message = currentEnabled 
+                ? `Are you sure you want to disable advertising for "${projectName}"?`
+                : `Are you sure you want to enable advertising for "${projectName}"?\n\nMake sure you've configured your global advertising settings first.`;
+                
+            if (confirm(message)) {
+                try {
+                    const response = await PMConfig.fetch(`api/v6/projects/${projectId}/advertising`, {
+                        method: 'PUT',
+                        body: JSON.stringify({ advertising_enabled: !currentEnabled })
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        await loadProjectsV6(); // Reload list
+                        showAlert(data.message, 'success');
+                    } else {
+                        const data = await response.json();
+                        showAlert(data.error || `Failed to ${action} advertising`, 'error');
+                    }
+                } catch (error) {
+                    console.error('Toggle advertising error:', error);
+                    showAlert(`Error ${action}ing advertising`, 'error');
+                }
+            }
+        }
+
+        // Delete v6 project
+        async function deleteToolV6(projectId, projectName) {
+            if (confirm(`Are you sure you want to delete "${projectName}"? This action cannot be undone and will permanently remove all project data and deployed files.`)) {
+                try {
+                    const response = await PMConfig.fetch(`api/v6/projects/${projectId}`, {
+                        method: 'DELETE'
+                    });
+
+                    if (response.ok) {
+                        await loadProjectsV6(); // Reload list
+                        showAlert('Project and deployed files deleted successfully', 'success');
+                    } else {
+                        const data = await response.json();
+                        showAlert(data.error || 'Failed to delete project', 'error');
+                    }
+                } catch (error) {
+                    console.error('Delete project error:', error);
+                    showAlert('Error deleting project', 'error');
+                }
+            }
+        }
+
+        // Clone v6 project  
+        async function cloneToolV6(projectId) {
+            try {
+                const response = await PMConfig.fetch(`api/v6/projects/${projectId}/clone`, {
+                    method: 'POST'
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    await loadProjectsV6(); // Reload list
+                    showAlert(`Project cloned as "${data.project.name}"`, 'success');
+                } else {
+                    const data = await response.json();
+                    showAlert(data.error || 'Failed to clone project', 'error');
+                }
+            } catch (error) {
+                console.error('Clone project error:', error);
+                showAlert('Error cloning project', 'error');
+            }
+        }
+
+        // Show v6 project analytics
+        function showAnalyticsV6(projectId) {
+            showAlert('Analytics feature coming soon!', 'info');
+        }
+
+        // Projects will be loaded in showDashboard() function
     </script>
 </body>
 </html>

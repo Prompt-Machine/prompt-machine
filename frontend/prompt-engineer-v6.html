@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prompt Engineer V6 - Multi-Step Project Builder | Prompt Machine v1.0.0</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .project-card {
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .project-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        .step-card {
+            transition: all 0.2s ease;
+            border: 2px dashed #e5e7eb;
+        }
+        .step-card.populated {
+            border: 2px solid #10b981;
+            background-color: #f0fdf4;
+        }
+        .field-card {
+            transition: all 0.2s ease;
+            border: 1px solid #e5e7eb;
+        }
+        .field-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .drag-handle {
+            cursor: grab;
+        }
+        .drag-handle:active {
+            cursor: grabbing;
+        }
+        .modal {
+            backdrop-filter: blur(4px);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center space-x-4">
+                    <div class="bg-gradient-to-r from-purple-600 to-blue-600 w-10 h-10 rounded-full flex items-center justify-center text-white font-bold">
+                        V6
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-semibold text-gray-900">Prompt Engineer V6</h1>
+                        <p class="text-sm text-gray-500">Multi-Step Project Builder</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+                    <span class="text-sm text-gray-600">AI Engine Active</span>
+                    <a href="index.html" class="text-blue-600 hover:text-blue-800 font-medium">← Dashboard</a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="max-w-7xl mx-auto p-6">
+        
+        <!-- Main Content Area -->
+        <div id="main-view">
+            
+            <!-- Project List View -->
+            <div id="project-list-view">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-gray-800">Your Projects</h2>
+                    <button id="create-project-btn" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2">
+                        <i class="fas fa-plus"></i>
+                        <span>Create New Project</span>
+                    </button>
+                </div>
+                
+                <!-- Projects Grid -->
+                <div id="projects-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Projects will be loaded here -->
+                </div>
+                
+                <!-- Empty State -->
+                <div id="empty-state" class="text-center py-16 hidden">
+                    <div class="text-gray-400 text-6xl mb-4">🚀</div>
+                    <h3 class="text-xl font-semibold text-gray-600 mb-2">No projects yet</h3>
+                    <p class="text-gray-500 mb-6">Create your first multi-step AI tool with the project builder</p>
+                    <button id="create-first-project" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors">
+                        Create Your First Project
+                    </button>
+                </div>
+            </div>
+
+            <!-- Project Editor View -->
+            <div id="project-editor-view" class="hidden">
+                
+                <!-- Editor Header -->
+                <div class="bg-white rounded-lg shadow-sm border p-4 mb-6">
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center space-x-4">
+                            <button id="back-to-projects" class="text-gray-600 hover:text-gray-800">
+                                <i class="fas fa-arrow-left mr-2"></i>
+                                Back to Projects
+                            </button>
+                            <div>
+                                <h2 id="project-title" class="text-xl font-semibold text-gray-900">Project Editor</h2>
+                                <p id="project-description" class="text-sm text-gray-600">Edit your multi-step project</p>
+                            </div>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button id="preview-project" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 flex items-center space-x-2">
+                                <i class="fas fa-eye"></i>
+                                <span>Preview</span>
+                            </button>
+                            <button id="deploy-project" class="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 flex items-center space-x-2">
+                                <i class="fas fa-rocket"></i>
+                                <span>Deploy</span>
+                            </button>
+                            <button id="project-settings" class="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700">
+                                <i class="fas fa-cog"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Project Steps Editor -->
+                <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                    
+                    <!-- Steps List -->
+                    <div class="lg:col-span-1">
+                        <div class="bg-white rounded-lg shadow-sm border p-4">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="text-lg font-semibold">Steps</h3>
+                                <button id="add-step" class="text-blue-600 hover:text-blue-800">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                            <div id="steps-list" class="space-y-2">
+                                <!-- Steps will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Step Editor -->
+                    <div class="lg:col-span-3">
+                        <div id="step-editor" class="bg-white rounded-lg shadow-sm border p-6">
+                            <div class="text-center text-gray-500 py-12">
+                                <i class="fas fa-arrow-left text-4xl mb-4"></i>
+                                <p>Select a step to edit</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Project Creation Modal -->
+    <div id="create-project-modal" class="fixed inset-0 bg-black bg-opacity-50 modal hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-8 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            
+            <!-- Step 1: Initial Project Info -->
+            <div id="creation-step-1">
+                <h3 class="text-xl font-semibold mb-4">Create New AI Tool - Step 1 of 3</h3>
+                <form id="initial-project-form">
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Project Name <span class="text-gray-400">(optional - AI will suggest one)</span></label>
+                        <input type="text" id="project-name" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Leave blank for AI to suggest, or enter your own...">
+                        <p class="text-xs text-gray-500 mt-1">This will be used to create your subdomain (e.g., recipe-finder.tool.prompt-machine.com)</p>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">What Type of AI Expert Would You Like to Work With?</label>
+                        <input type="text" id="expert-type" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                               placeholder="e.g., Creative Writing Coach, Business Strategy Consultant, Fitness Trainer, Recipe Developer, Career Advisor, Marketing Specialist..." required>
+                        <p class="text-xs text-gray-500 mt-1">Describe the type of expert knowledge your AI tool should have</p>
+                    </div>
+                    
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Project Idea / Concept</label>
+                        <textarea id="project-idea" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" rows="4" 
+                                  placeholder="Describe what your AI tool should do, who it's for, and what problem it solves..." required></textarea>
+                        <p class="text-xs text-gray-500 mt-1">Be specific about your tool's purpose and target audience</p>
+                    </div>
+                    
+                    <div class="flex space-x-4">
+                        <button type="button" id="cancel-create" class="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded hover:bg-gray-400">
+                            Cancel
+                        </button>
+                        <button type="submit" id="submit-initial" class="flex-1 bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700">
+                            <span class="submit-text">Continue to Refinement</span>
+                            <span class="submit-loading hidden">Processing...</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Step 2: AI Refinement Questions -->
+            <div id="creation-step-2" class="hidden">
+                <h3 class="text-xl font-semibold mb-4">AI Refinement Questions - Step 2 of 3</h3>
+                <p class="text-gray-600 mb-6">The AI has some questions to help create the best possible tool for your needs. You can answer as many or as few as you'd like.</p>
+                
+                <div id="refinement-questions" class="space-y-4 mb-6">
+                    <!-- AI questions will be loaded here -->
+                </div>
+                
+                <div class="flex space-x-4">
+                    <button type="button" id="back-to-step-1" class="bg-gray-300 text-gray-700 py-2 px-4 rounded hover:bg-gray-400">
+                        ← Back
+                    </button>
+                    <button type="button" id="ask-more-questions" class="bg-purple-600 text-white py-2 px-4 rounded hover:bg-purple-700">
+                        <span class="ask-more-text">Ask AI for Further Refinement</span>
+                        <span class="ask-more-loading hidden">Thinking...</span>
+                    </button>
+                    <button type="button" id="create-fields" class="bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700">
+                        <span class="create-fields-text">Create Prompt Fields</span>
+                        <span class="create-fields-loading hidden">Generating...</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 3: Field Customization (will be populated after AI generation) -->
+            <div id="creation-step-3" class="hidden">
+                <h3 class="text-xl font-semibold mb-4">Customize Fields - Step 3 of 3</h3>
+                <p class="text-gray-600 mb-6">Review and customize the AI-generated fields. You can modify, remove, add, or rearrange them.</p>
+                
+                <div id="generated-fields" class="space-y-4 mb-6">
+                    <!-- Generated fields will be shown here for customization -->
+                </div>
+                
+                <div class="flex space-x-4">
+                    <button type="button" id="back-to-step-2" class="bg-gray-300 text-gray-700 py-2 px-4 rounded hover:bg-gray-400">
+                        ← Back to Refinement
+                    </button>
+                    <button type="button" id="add-custom-field" class="bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700">
+                        + Add Field
+                    </button>
+                    <button type="button" id="finalize-project" class="bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700">
+                        <span class="finalize-text">Create Project</span>
+                        <span class="finalize-loading hidden">Creating...</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Field Editor Modal -->
+    <div id="field-editor-modal" class="fixed inset-0 bg-black bg-opacity-50 modal hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-8 max-w-lg w-full mx-4">
+            <h3 class="text-xl font-semibold mb-4" id="field-modal-title">Add Field</h3>
+            <form id="field-editor-form">
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Field Name</label>
+                        <input type="text" id="field-name" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Field Type</label>
+                        <select id="field-type" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
+                            <option value="text">Text Input</option>
+                            <option value="textarea">Textarea</option>
+                            <option value="select">Select Dropdown</option>
+                            <option value="radio">Radio Buttons</option>
+                            <option value="checkbox">Checkboxes</option>
+                            <option value="number">Number</option>
+                            <option value="email">Email</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Field Label</label>
+                    <input type="text" id="field-label" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Placeholder</label>
+                    <input type="text" id="field-placeholder" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                    <textarea id="field-description" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" rows="2"></textarea>
+                </div>
+                <div class="mb-4">
+                    <label class="flex items-center">
+                        <input type="checkbox" id="field-required" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                        <span class="ml-2 text-sm text-gray-700">Required field</span>
+                    </label>
+                </div>
+                <div id="field-choices-section" class="mb-4 hidden">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Choices (one per line)</label>
+                    <textarea id="field-choices" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" rows="4" placeholder="Option 1&#10;Option 2&#10;Option 3"></textarea>
+                </div>
+                <div class="flex space-x-4">
+                    <button type="button" id="cancel-field" class="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded hover:bg-gray-400">
+                        Cancel
+                    </button>
+                    <button type="submit" class="flex-1 bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700">
+                        Save Field
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Project Settings Modal -->
+    <div id="project-settings-modal" class="fixed inset-0 bg-black bg-opacity-50 modal hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-8 max-w-2xl w-full mx-4">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-semibold text-gray-900">Project Settings</h3>
+                <button id="close-settings" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="project-settings-form">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Project Name *</label>
+                        <input type="text" id="settings-project-name" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
+                        <p class="text-xs text-gray-500 mt-1">This will be used to generate the subdomain</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">AI Expert Role</label>
+                        <input type="text" id="settings-ai-role" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                        <textarea id="settings-project-description" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" rows="3"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Header Title</label>
+                        <input type="text" id="settings-header-title" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Header Subtitle</label>
+                        <input type="text" id="settings-header-subtitle" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                </div>
+                
+                <div class="mt-6 bg-gray-50 rounded-lg p-4">
+                    <div class="flex items-center space-x-2 mb-3">
+                        <input type="checkbox" id="update-subdomain" class="rounded text-blue-600">
+                        <label for="update-subdomain" class="text-sm font-medium text-gray-700">Update subdomain when name changes</label>
+                    </div>
+                    <p class="text-xs text-gray-600">⚠️ Changing the subdomain will break existing links to your deployed tool</p>
+                </div>
+                
+                <div class="flex justify-end space-x-3 mt-8">
+                    <button type="button" id="cancel-settings" class="px-6 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                        Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg p-8 text-center">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p class="text-gray-600" id="loading-text">Loading...</p>
+        </div>
+    </div>
+
+    <!-- Version and Copyright Footer -->
+    <footer class="bg-gray-800 text-white py-6 mt-8">
+        <div class="container mx-auto px-4 text-center">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="mb-2 md:mb-0">
+                    <span class="text-lg font-semibold">Prompt Machine v1.0.0</span>
+                </div>
+                <div class="text-sm text-gray-300">
+                    Copyright © 2025 <a href="https://llnet.ca" target="_blank" class="text-blue-400 hover:text-blue-300">LLnet Inc</a> & 
+                    <a href="https://claude.ai/code" target="_blank" class="text-blue-400 hover:text-blue-300">Anthropic Claude Code</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Load JavaScript -->
+    <script src="js/config.js"></script>
+    <script src="js/prompt-engineer-v6.js"></script>
+</body>
+</html>

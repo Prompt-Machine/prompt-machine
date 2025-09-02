@@ -1,0 +1,1124 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prompt Builder - Prompt Machine</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/js/config.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-white shadow">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-4">
+                    <a href="/" class="text-blue-500 hover:text-blue-600">← Back to Dashboard</a>
+                    <h1 class="text-2xl font-bold">🎭 Prompt Builder</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span id="userEmail" class="text-gray-600"></span>
+                    <button onclick="logout()" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">
+                        Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto px-6 py-8">
+        <!-- Project Info -->
+        <div id="projectInfo" class="bg-white p-6 rounded-lg shadow mb-6">
+            <div class="flex items-center space-x-3 mb-2">
+                <div class="w-3 h-3 bg-blue-500 rounded-full"></div>
+                <input 
+                    type="text" 
+                    id="projectName" 
+                    class="text-xl font-bold bg-gray-50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 rounded px-3 py-2 flex-1 hover:bg-white transition-colors"
+                    placeholder="Enter your AI tool name..."
+                    oninput="updateSaveButton(); showUnsavedIndicator();"
+                    onblur="updateProjectName()"
+                    onkeypress="if(event.key==='Enter') this.blur()"
+                    onfocus="this.select()"
+                >
+                <div class="text-xs text-blue-600 font-medium">✏️ Editable</div>
+            </div>
+            
+            <!-- Subdomain Selection -->
+            <div class="mt-4 bg-blue-50 p-3 rounded-lg">
+                <div class="flex items-center space-x-2 mb-1">
+                    <label class="text-sm text-blue-700 font-medium">🌐 Tool URL:</label>
+                    <div id="unsavedIndicator" class="hidden text-xs text-orange-600 bg-orange-100 px-2 py-1 rounded">
+                        Unsaved changes
+                    </div>
+                    <div class="flex items-center flex-1">
+                        <span class="text-sm text-gray-600">https://</span>
+                        <div class="relative flex-1 mx-1">
+                            <input 
+                                type="text" 
+                                id="toolSubdomain" 
+                                class="w-full text-sm border border-blue-300 bg-white rounded px-2 py-1 pr-8 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                placeholder="toolname"
+                                oninput="updateSaveButton(); checkSubdomainAvailability(this.value); showUnsavedIndicator();"
+                                onblur="updateSubdomain()"
+                                onkeypress="if(event.key==='Enter') this.blur()"
+                                pattern="[a-zA-Z0-9-]+"
+                                maxlength="50"
+                                required
+                            >
+                            <div id="subdomainStatus" class="absolute right-2 top-1/2 transform -translate-y-1/2">
+                                <!-- Status indicator will be inserted here -->
+                            </div>
+                        </div>
+                        <span class="text-sm text-gray-600">.tool.prompt-machine.com</span>
+                    </div>
+                </div>
+                <div id="subdomainMessage" class="text-xs text-blue-600">Choose a unique subdomain for your AI tool</div>
+                
+                <!-- Subdomain Suggestions -->
+                <div id="subdomainSuggestions" class="hidden mt-2">
+                    <div class="text-xs text-gray-600 mb-1">Suggestions:</div>
+                    <div class="flex flex-wrap gap-1" id="suggestionsList">
+                        <!-- Suggestions will be inserted here -->
+                    </div>
+                </div>
+            </div>
+            
+            <p class="text-gray-600 mt-2">Build an AI prompt by chatting with Claude about your tool idea.</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Chat Interface -->
+            <div class="bg-white rounded-lg shadow">
+                <!-- Chat Header -->
+                <div class="border-b px-6 py-4">
+                    <h3 class="text-lg font-semibold flex items-center">
+                        <span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                        Chat with Claude
+                    </h3>
+                    <p class="text-sm text-gray-600">Describe your AI tool and Claude will help you create the perfect prompt.</p>
+                </div>
+
+                <!-- Chat Messages -->
+                <div id="chatMessages" class="h-96 overflow-y-auto p-6 space-y-4">
+                    <div class="text-center text-gray-500">
+                        <div class="text-lg mb-2">💬</div>
+                        <p>Start chatting with Claude about your AI tool idea!</p>
+                        <p class="text-sm mt-2">Describe what you want your tool to do and Claude will help you create the perfect prompt.</p>
+                    </div>
+                </div>
+
+                <!-- Chat Input -->
+                <div class="border-t p-6">
+                    <form id="chatForm" class="flex space-x-3">
+                        <input
+                            type="text"
+                            id="messageInput"
+                            placeholder="Ask Claude about your AI tool idea..."
+                            class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            disabled
+                        >
+                        <button
+                            type="submit"
+                            id="sendButton"
+                            disabled
+                            class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-300"
+                        >
+                            Send
+                        </button>
+                    </form>
+                    <div id="chatError" class="mt-2 text-red-600 text-sm hidden"></div>
+                </div>
+            </div>
+
+            <!-- Prompt Preview -->
+            <div class="bg-white rounded-lg shadow">
+                <!-- Preview Header -->
+                <div class="border-b px-6 py-4">
+                    <h3 class="text-lg font-semibold">📋 Prompt Preview</h3>
+                    <p class="text-sm text-gray-600">Your AI tool prompt will appear here as you chat with Claude.</p>
+                </div>
+
+                <!-- Prompt Content -->
+                <div class="p-6">
+                    <!-- System Prompt -->
+                    <div class="mb-6">
+                        <h4 class="font-semibold text-gray-700 mb-2">System Prompt</h4>
+                        <div id="systemPrompt" class="bg-gray-50 p-4 rounded-lg min-h-24 text-sm">
+                            <div class="text-gray-400 italic">
+                                Chat with Claude to generate your system prompt...
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Input Fields -->
+                    <div class="mb-6">
+                        <div class="flex items-center justify-between mb-2">
+                            <h4 class="font-semibold text-gray-700">Input Fields</h4>
+                            <button 
+                                id="addFieldButton" 
+                                onclick="addNewField()"
+                                class="text-sm bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
+                            >
+                                + Add Field
+                            </button>
+                        </div>
+                        <div id="inputFields" class="space-y-3">
+                            <div class="text-gray-400 italic text-sm" id="emptyFieldsMessage">
+                                Claude will suggest input fields based on your tool, or add your own...
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex space-x-3">
+                        <button
+                            id="savePromptButton"
+                            onclick="savePrompt()"
+                            disabled
+                            class="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 disabled:bg-gray-300"
+                        >
+                            Save Tool & Prompt
+                        </button>
+                        <button
+                            id="deployButton"
+                            onclick="deployTool()"
+                            disabled
+                            class="bg-purple-500 text-white px-4 py-2 rounded-md hover:bg-purple-600 disabled:bg-gray-300"
+                        >
+                            Deploy Tool
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status Messages -->
+        <div id="statusMessages" class="mt-6 space-y-3"></div>
+    </div>
+
+    <script>
+        // Global variables
+        let authToken = localStorage.getItem('authToken');
+        let currentUser = null;
+        let projectId = null;
+        let conversationId = null;
+        let currentProject = null;
+        let suggestedFields = [];
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Check authentication
+            if (!authToken) {
+                window.location.href = '/';
+                return;
+            }
+
+            try {
+                // Get current user
+                const userResponse = await PMConfig.fetch('api/auth/me');
+
+                if (!userResponse.ok) {
+                    throw new Error('Authentication failed');
+                }
+
+                const userData = await userResponse.json();
+                currentUser = userData.user;
+                document.getElementById('userEmail').textContent = currentUser.email;
+
+                // Get project ID from URL params
+                const urlParams = new URLSearchParams(window.location.search);
+                projectId = urlParams.get('project');
+                const mode = urlParams.get('mode');
+
+                if (mode === 'new') {
+                    // New tool mode - no existing project, set defaults
+                    currentProject = { 
+                        name: '', 
+                        subdomain: '',
+                        id: null 
+                    };
+                    document.getElementById('projectName').value = '';
+                    document.getElementById('toolSubdomain').value = '';
+                    
+                    // Enable interface but don't load any existing data
+                    renderInputFields(); // Show empty fields
+                    
+                    // Enable chat without starting conversation (will start when user first chats)
+                    document.getElementById('messageInput').disabled = false;
+                    document.getElementById('sendButton').disabled = false;
+                    
+                    // Update button states (will be disabled until name/subdomain filled)
+                    updateSaveButton();
+                } else if (projectId) {
+                    // Existing project mode
+                    await loadProject();
+                    await startConversation();
+                } else {
+                    showError('No project specified. Redirecting to dashboard...');
+                    setTimeout(() => window.location.href = '/', 2000);
+                    return;
+                }
+
+            } catch (error) {
+                console.error('Initialization error:', error);
+                showError('Failed to initialize. Redirecting to login...');
+                setTimeout(() => window.location.href = '/', 2000);
+            }
+
+            // Ensure chat interface is always enabled regardless of conversation start
+            document.getElementById('messageInput').disabled = false;
+            document.getElementById('sendButton').disabled = false;
+            
+            // Update button states on load
+            updateSaveButton();
+            
+            // Add debugging - log if project data is missing
+            if (!currentProject || !currentProject.name) {
+                console.warn('⚠️ Project data not loaded properly:', currentProject);
+            } else {
+                console.log('✅ Project loaded:', currentProject.name, 'subdomain:', currentProject.subdomain);
+            }
+        });
+
+        // Load project details
+        async function loadProject() {
+            try {
+                const response = await PMConfig.fetch(`api/projects/${projectId}`);
+
+                if (response.ok) {
+                    const data = await response.json();
+                    currentProject = data.project;
+                    document.getElementById('projectName').value = currentProject.name;
+                    document.getElementById('toolSubdomain').value = currentProject.subdomain || currentProject.slug || '';
+                    
+                    // Update button states now that we have project data
+                    updateSaveButton();
+                } else {
+                    throw new Error('Project not found');
+                }
+            } catch (error) {
+                console.error('Load project error:', error);
+                showError('Failed to load project');
+            }
+        }
+
+        // Update project name
+        async function updateProjectName() {
+            const newName = document.getElementById('projectName').value.trim();
+            
+            if (!newName || newName === currentProject.name) {
+                // Reset to original name if empty or unchanged
+                document.getElementById('projectName').value = currentProject.name;
+                return;
+            }
+
+            try {
+                const response = await PMConfig.fetch(`api/projects/${projectId}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ name: newName })
+                });
+
+                if (response.ok) {
+                    currentProject.name = newName;
+                    console.log(`✅ Project renamed to: ${newName}`);
+                    
+                    // Auto-suggest subdomain if empty or using old slug
+                    const subdomainField = document.getElementById('toolSubdomain');
+                    if (!subdomainField.value || subdomainField.value === currentProject.slug) {
+                        const suggestedSubdomain = generateSlug(newName);
+                        subdomainField.value = suggestedSubdomain;
+                        subdomainField.style.borderColor = '#f59e0b'; // Orange to indicate suggestion
+                        
+                        // Check availability of the suggested subdomain
+                        checkSubdomainAvailability(suggestedSubdomain);
+                        
+                        setTimeout(() => { 
+                            if (subdomainField.style.borderColor === 'rgb(245, 158, 11)') {
+                                subdomainField.style.borderColor = ''; 
+                            }
+                        }, 2000);
+                    } else {
+                        // Hide unsaved indicator if name saved successfully and subdomain unchanged
+                        hideUnsavedIndicator();
+                    }
+                    
+                    // Update button states since name changed
+                    updateSaveButton();
+                } else {
+                    // Reset on error
+                    document.getElementById('projectName').value = currentProject.name;
+                    console.error('Failed to update project name');
+                }
+            } catch (error) {
+                // Reset on error
+                document.getElementById('projectName').value = currentProject.name;
+                console.error('Error updating project name:', error);
+            }
+        }
+
+        // Generate URL-friendly slug
+        function generateSlug(name) {
+            return name
+                .toLowerCase()
+                .trim()
+                .replace(/[^\w\s-]/g, '') // Remove special characters
+                .replace(/[\s_-]+/g, '-') // Replace spaces/underscores with hyphens
+                .replace(/^-+|-+$/g, ''); // Remove leading/trailing hyphens
+        }
+
+        // Debounce timer for subdomain checking
+        let subdomainCheckTimer = null;
+        
+        // Check subdomain availability in real-time
+        async function checkSubdomainAvailability(subdomain) {
+            const cleanSubdomain = subdomain.toLowerCase().trim();
+            const statusDiv = document.getElementById('subdomainStatus');
+            const messageDiv = document.getElementById('subdomainMessage');
+            const suggestionsDiv = document.getElementById('subdomainSuggestions');
+            const input = document.getElementById('toolSubdomain');
+            
+            // Clear previous timer
+            if (subdomainCheckTimer) {
+                clearTimeout(subdomainCheckTimer);
+            }
+            
+            // Auto-correct input to lowercase
+            if (input.value !== cleanSubdomain) {
+                input.value = cleanSubdomain;
+            }
+            
+            // Validate format first
+            const valid = /^[a-zA-Z0-9-]*$/.test(cleanSubdomain);
+            if (!valid && cleanSubdomain.length > 0) {
+                statusDiv.innerHTML = '❌';
+                messageDiv.textContent = 'Only letters, numbers, and hyphens allowed';
+                messageDiv.className = 'text-xs text-red-600';
+                input.style.borderColor = '#ef4444';
+                suggestionsDiv.classList.add('hidden');
+                return;
+            }
+            
+            if (cleanSubdomain.length < 2) {
+                statusDiv.innerHTML = '';
+                messageDiv.textContent = 'Choose a unique subdomain for your AI tool';
+                messageDiv.className = 'text-xs text-blue-600';
+                input.style.borderColor = '#3b82f6';
+                suggestionsDiv.classList.add('hidden');
+                return;
+            }
+            
+            // Show loading
+            statusDiv.innerHTML = '⏳';
+            messageDiv.textContent = 'Checking availability...';
+            messageDiv.className = 'text-xs text-gray-600';
+            
+            // Debounce the API call
+            subdomainCheckTimer = setTimeout(async () => {
+                try {
+                    const response = await PMConfig.fetch(`api/projects/check-subdomain/${cleanSubdomain}`);
+                    const data = await response.json();
+                    
+                    if (data.available) {
+                        statusDiv.innerHTML = '✅';
+                        messageDiv.textContent = 'Available! Perfect choice.';
+                        messageDiv.className = 'text-xs text-green-600';
+                        input.style.borderColor = '#10b981';
+                        suggestionsDiv.classList.add('hidden');
+                    } else if (data.owned_by_user) {
+                        statusDiv.innerHTML = '👤';
+                        messageDiv.textContent = 'You already own this subdomain';
+                        messageDiv.className = 'text-xs text-blue-600';
+                        input.style.borderColor = '#3b82f6';
+                        suggestionsDiv.classList.add('hidden');
+                    } else {
+                        statusDiv.innerHTML = '❌';
+                        messageDiv.textContent = 'Already taken. Try one of these:';
+                        messageDiv.className = 'text-xs text-red-600';
+                        input.style.borderColor = '#ef4444';
+                        
+                        // Show suggestions
+                        if (data.suggestions && data.suggestions.length > 0) {
+                            showSubdomainSuggestions(data.suggestions);
+                        }
+                    }
+                } catch (error) {
+                    statusDiv.innerHTML = '⚠️';
+                    messageDiv.textContent = 'Error checking availability';
+                    messageDiv.className = 'text-xs text-red-600';
+                    console.error('Subdomain check error:', error);
+                }
+            }, 500); // 500ms debounce
+        }
+        
+        // Show subdomain suggestions
+        function showSubdomainSuggestions(suggestions) {
+            const suggestionsDiv = document.getElementById('subdomainSuggestions');
+            const suggestionsList = document.getElementById('suggestionsList');
+            
+            suggestionsList.innerHTML = suggestions.map(suggestion => 
+                `<button type="button" 
+                         onclick="selectSubdomain('${suggestion}')"
+                         class="px-2 py-1 text-xs bg-white border border-blue-300 rounded hover:bg-blue-50 hover:border-blue-500 transition-colors">
+                    ${suggestion}
+                </button>`
+            ).join('');
+            
+            suggestionsDiv.classList.remove('hidden');
+        }
+        
+        // Select a suggested subdomain
+        function selectSubdomain(subdomain) {
+            const input = document.getElementById('toolSubdomain');
+            input.value = subdomain;
+            checkSubdomainAvailability(subdomain);
+            document.getElementById('subdomainSuggestions').classList.add('hidden');
+        }
+
+        // Update subdomain
+        async function updateSubdomain() {
+            const newSubdomain = document.getElementById('toolSubdomain').value.trim().toLowerCase();
+            
+            // Validate subdomain format (alphanumeric and hyphens only)
+            const subdomainRegex = /^[a-zA-Z0-9-]+$/;
+            if (newSubdomain && !subdomainRegex.test(newSubdomain)) {
+                alert('Subdomain can only contain letters, numbers, and hyphens');
+                document.getElementById('toolSubdomain').value = currentProject.subdomain || '';
+                return;
+            }
+            
+            if (!newSubdomain || newSubdomain === (currentProject.subdomain || '')) {
+                // Reset to original subdomain if empty or unchanged
+                document.getElementById('toolSubdomain').value = currentProject.subdomain || '';
+                return;
+            }
+
+            try {
+                const response = await PMConfig.fetch(`api/projects/${projectId}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ 
+                        name: currentProject.name,
+                        subdomain: newSubdomain
+                    })
+                });
+
+                if (response.ok) {
+                    currentProject.subdomain = newSubdomain;
+                    console.log(`✅ Project subdomain updated to: ${newSubdomain}`);
+                    hideUnsavedIndicator();
+                    updateSaveButton(); // Update button states since subdomain changed
+                } else {
+                    // Reset on error
+                    document.getElementById('toolSubdomain').value = currentProject.subdomain || '';
+                    console.error('Failed to update project subdomain');
+                }
+            } catch (error) {
+                // Reset on error
+                document.getElementById('toolSubdomain').value = currentProject.subdomain || '';
+                console.error('Error updating project subdomain:', error);
+            }
+        }
+
+        // Start conversation with Claude
+        async function startConversation() {
+            try {
+                const response = await PMConfig.fetch('api/prompt-builder/start', {
+                    method: 'POST',
+                    body: JSON.stringify({ projectId })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    conversationId = data.conversationId;
+                    
+                    // Display existing messages if any
+                    if (data.messages && data.messages.length > 0) {
+                        displayMessages(data.messages);
+                    }
+                    
+                    if (data.suggestedFields) {
+                        suggestedFields = parseFieldsForEditing(data.suggestedFields);
+                        renderInputFields();
+                    }
+
+                    // Enable chat interface
+                    document.getElementById('messageInput').disabled = false;
+                    document.getElementById('sendButton').disabled = false;
+                    document.getElementById('messageInput').focus();
+                    
+                    // Update save button state
+                    updateSaveButton();
+                } else {
+                    throw new Error(data.error || 'Failed to start conversation');
+                }
+            } catch (error) {
+                console.error('Start conversation error:', error);
+                showError('Failed to start conversation with Claude: ' + error.message);
+            }
+        }
+
+        // Send message to Claude
+        document.getElementById('chatForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const messageInput = document.getElementById('messageInput');
+            const message = messageInput.value.trim();
+            
+            if (!message) return;
+
+            // Add user message to chat
+            addMessage('user', message);
+            messageInput.value = '';
+            
+            // Disable input while processing
+            messageInput.disabled = true;
+            document.getElementById('sendButton').disabled = true;
+
+            try {
+                // If no conversation ID and no project ID, we can't send messages yet
+                if (!conversationId && !projectId) {
+                    showChatError('Please save your tool first before chatting with Claude');
+                    messageInput.disabled = false;
+                    document.getElementById('sendButton').disabled = false;
+                    return;
+                }
+                
+                // Start conversation if we have project but no conversation
+                if (!conversationId && projectId) {
+                    await startConversation();
+                }
+                
+                const response = await PMConfig.fetch('api/prompt-builder/message', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        conversationId,
+                        message
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    // Add Claude's response
+                    addMessage('assistant', data.reply);
+                    
+                    // Extract and update system prompt from Claude's response
+                    updateSystemPrompt(data.reply);
+                    
+                    // Update suggested fields
+                    if (data.suggestedFields) {
+                        suggestedFields = parseFieldsForEditing(data.suggestedFields);
+                        renderInputFields();
+                    }
+
+                    // Enable save button if we have content
+                    updateSaveButton();
+                } else {
+                    throw new Error(data.error || 'Failed to send message');
+                }
+            } catch (error) {
+                console.error('Send message error:', error);
+                showChatError('Failed to send message: ' + error.message);
+            } finally {
+                // Re-enable input
+                messageInput.disabled = false;
+                document.getElementById('sendButton').disabled = false;
+                messageInput.focus();
+            }
+        });
+
+        // Display conversation messages
+        function displayMessages(messages) {
+            const chatMessages = document.getElementById('chatMessages');
+            chatMessages.innerHTML = '';
+            
+            messages.forEach(msg => {
+                addMessage(msg.role, msg.content, false);
+            });
+        }
+
+        // Add message to chat
+        function addMessage(role, content, scroll = true) {
+            const chatMessages = document.getElementById('chatMessages');
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `flex ${role === 'user' ? 'justify-end' : 'justify-start'}`;
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = `max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                role === 'user' 
+                    ? 'bg-blue-500 text-white' 
+                    : 'bg-gray-200 text-gray-800'
+            }`;
+            contentDiv.innerHTML = formatMessage(content);
+            
+            messageDiv.appendChild(contentDiv);
+            chatMessages.appendChild(messageDiv);
+            
+            if (scroll) {
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+            
+            // Update save button after adding message
+            updateSaveButton();
+        }
+
+        // Format message content
+        function formatMessage(content) {
+            return content
+                .replace(/\n/g, '<br>')
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>');
+        }
+
+        // Parse Claude's field suggestions into editable format
+        function parseFieldsForEditing(claudeFields) {
+            if (!claudeFields || !Array.isArray(claudeFields)) {
+                return [];
+            }
+            
+            return claudeFields.map((field, index) => {
+                // Convert Claude's format to our editable format
+                const fieldType = field.type === 'select' ? 'dropdown' : (field.type || 'text');
+                
+                return {
+                    id: `field_${fieldIdCounter++}`,
+                    name: field.label || field.name || `Field ${index + 1}`,
+                    type: fieldType,
+                    placeholder: field.placeholder || 'Enter value...',
+                    required: field.required !== false, // Default to true
+                    options: field.options || []
+                };
+            });
+        }
+
+        // Extract and update system prompt from Claude's response
+        function updateSystemPrompt(claudeResponse) {
+            const systemPromptDiv = document.getElementById('systemPrompt');
+            
+            // Look for system prompt in Claude's response
+            const systemPromptMatch = claudeResponse.match(/\*\*System Prompt:\*\*\s*["\"]?(.*?)["\"]?\s*(?=\*\*|$)/is);
+            
+            if (systemPromptMatch) {
+                const extractedPrompt = systemPromptMatch[1].trim();
+                if (extractedPrompt) {
+                    systemPromptDiv.innerHTML = `
+                        <div class="text-sm text-gray-900 whitespace-pre-wrap">${extractedPrompt}</div>
+                        <div class="mt-2 text-xs text-gray-500">
+                            <em>Extracted from Claude's response - you can edit this before saving</em>
+                        </div>
+                    `;
+                    return;
+                }
+            }
+            
+            // Fallback: Look for quoted system prompt patterns
+            const quotedPromptMatch = claudeResponse.match(/"([^"]+)"/);
+            if (quotedPromptMatch && quotedPromptMatch[1].length > 50) {
+                const extractedPrompt = quotedPromptMatch[1].trim();
+                systemPromptDiv.innerHTML = `
+                    <div class="text-sm text-gray-900 whitespace-pre-wrap">${extractedPrompt}</div>
+                    <div class="mt-2 text-xs text-gray-500">
+                        <em>Extracted from Claude's response - you can edit this before saving</em>
+                    </div>
+                `;
+            }
+        }
+
+        // Update save button state
+        function updateSaveButton() {
+            // Enable save button if we have project name and subdomain (minimum requirement)
+            const hasProjectName = document.getElementById('projectName').value.trim().length > 0;
+            const hasSubdomain = document.getElementById('toolSubdomain').value.trim().length > 0;
+            const hasFields = suggestedFields.length > 0;
+            const hasConversation = document.getElementById('chatMessages').children.length > 1;
+            
+            // Save is enabled if we have name and subdomain
+            const canSave = hasProjectName && hasSubdomain;
+            // Deploy requires at least some content (fields or conversation)
+            const canDeploy = canSave && (hasFields || hasConversation);
+            
+            document.getElementById('savePromptButton').disabled = !canSave;
+            document.getElementById('deployButton').disabled = !canDeploy;
+        }
+
+        // Save prompt
+        async function savePrompt() {
+            try {
+                showStatus('Saving prompt and tool settings...', 'blue');
+
+                // Get current tool name and subdomain
+                const toolName = document.getElementById('projectName').value.trim();
+                const subdomain = document.getElementById('toolSubdomain').value.trim().toLowerCase();
+                
+                // Validate tool name and subdomain
+                if (!toolName) {
+                    showStatus('Please enter a tool name', 'red');
+                    document.getElementById('projectName').focus();
+                    return;
+                }
+                
+                if (!subdomain) {
+                    showStatus('Please enter a subdomain', 'red');
+                    document.getElementById('toolSubdomain').focus();
+                    return;
+                }
+
+                // Check subdomain format
+                const subdomainRegex = /^[a-zA-Z0-9-]+$/;
+                if (!subdomainRegex.test(subdomain)) {
+                    showStatus('Subdomain can only contain letters, numbers, and hyphens', 'red');
+                    document.getElementById('toolSubdomain').focus();
+                    return;
+                }
+
+                // Save tool settings - create new project if needed, update if exists
+                let projectResponse;
+                
+                if (!projectId || !currentProject.id) {
+                    // Create new project
+                    projectResponse = await PMConfig.fetch('api/projects', {
+                        method: 'POST',
+                        body: JSON.stringify({ 
+                            name: toolName,
+                            subdomain: subdomain,
+                            description: 'AI Tool created with Prompt Machine'
+                        })
+                    });
+                    
+                    if (projectResponse.ok) {
+                        const data = await projectResponse.json();
+                        projectId = data.project.id;
+                        currentProject = data.project;
+                        
+                        // Update URL to include project ID
+                        const newUrl = new URL(window.location);
+                        newUrl.searchParams.set('project', projectId);
+                        newUrl.searchParams.delete('mode');
+                        window.history.replaceState({}, '', newUrl);
+                    }
+                } else {
+                    // Update existing project
+                    projectResponse = await PMConfig.fetch(`api/projects/${projectId}`, {
+                        method: 'PUT',
+                        body: JSON.stringify({ 
+                            name: toolName,
+                            subdomain: subdomain
+                        })
+                    });
+                    
+                    if (projectResponse.ok) {
+                        currentProject.name = toolName;
+                        currentProject.subdomain = subdomain;
+                    }
+                }
+
+                if (!projectResponse.ok) {
+                    const projectError = await projectResponse.json();
+                    throw new Error(projectError.error || 'Failed to save tool settings');
+                }
+
+                // Extract system prompt from conversation (simplified for now)
+                const systemPrompt = `You are ${currentProject.name}, an AI assistant. Help users with their requests.`;
+
+                // Save the prompt
+                const promptResponse = await PMConfig.fetch('api/prompt-builder/save', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        projectId,
+                        systemPrompt,
+                        fields: suggestedFields
+                    })
+                });
+
+                if (promptResponse.ok) {
+                    showStatus(`✅ "${toolName}" saved! Ready to deploy at ${subdomain}.tool.prompt-machine.com`, 'green');
+                    document.getElementById('deployButton').disabled = false;
+                    
+                    // Add visual confirmation to the tool name and subdomain fields
+                    flashSaveConfirmation();
+                } else {
+                    throw new Error('Failed to save prompt');
+                }
+            } catch (error) {
+                console.error('Save prompt error:', error);
+                showStatus(`Failed to save: ${error.message}`, 'red');
+            }
+        }
+
+        // Visual feedback for successful save
+        function flashSaveConfirmation() {
+            const nameField = document.getElementById('projectName');
+            const subdomainField = document.getElementById('toolSubdomain');
+            
+            // Hide unsaved indicator
+            document.getElementById('unsavedIndicator').classList.add('hidden');
+            
+            // Flash green border briefly
+            [nameField, subdomainField].forEach(field => {
+                const originalBorder = field.style.borderColor;
+                field.style.borderColor = '#10b981';
+                field.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.1)';
+                
+                setTimeout(() => {
+                    field.style.borderColor = originalBorder;
+                    field.style.boxShadow = '';
+                }, 1500);
+            });
+        }
+
+        // Show unsaved changes indicator
+        function showUnsavedIndicator() {
+            document.getElementById('unsavedIndicator').classList.remove('hidden');
+        }
+
+        // Hide unsaved changes indicator
+        function hideUnsavedIndicator() {
+            document.getElementById('unsavedIndicator').classList.add('hidden');
+        }
+
+        // Field editing functionality
+        let suggestedFields = [];
+        let fieldIdCounter = 1;
+
+        // Add new field
+        function addNewField() {
+            const field = {
+                id: `field_${fieldIdCounter++}`,
+                name: `Field ${suggestedFields.length + 1}`,
+                type: 'text',
+                placeholder: 'Enter value...',
+                required: true,
+                options: []
+            };
+            
+            suggestedFields.push(field);
+            renderInputFields();
+            showUnsavedIndicator();
+            updateSaveButton(); // Enable buttons since we now have fields
+        }
+
+        // Render all input fields with editing controls
+        function renderInputFields() {
+            const container = document.getElementById('inputFields');
+            const emptyMessage = document.getElementById('emptyFieldsMessage');
+            
+            if (suggestedFields.length === 0) {
+                emptyMessage.style.display = 'block';
+                container.innerHTML = '<div class="text-gray-400 italic text-sm" id="emptyFieldsMessage">Claude will suggest input fields based on your tool, or add your own...</div>';
+                return;
+            }
+            
+            emptyMessage.style.display = 'none';
+            
+            container.innerHTML = suggestedFields.map((field, index) => `
+                <div class="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                    <div class="flex items-center justify-between mb-3">
+                        <input 
+                            type="text" 
+                            value="${field.name}" 
+                            onchange="updateFieldName(${index}, this.value)"
+                            class="font-medium text-gray-700 bg-transparent border-none focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1"
+                            placeholder="Field Name"
+                        >
+                        <button 
+                            onclick="removeField(${index})"
+                            class="text-red-500 hover:text-red-700 text-sm"
+                        >
+                            ✕ Remove
+                        </button>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-3 mb-3">
+                        <div>
+                            <label class="block text-xs text-gray-600 mb-1">Type</label>
+                            <select 
+                                onchange="updateFieldType(${index}, this.value)"
+                                class="w-full text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            >
+                                <option value="text" ${field.type === 'text' ? 'selected' : ''}>Text</option>
+                                <option value="textarea" ${field.type === 'textarea' ? 'selected' : ''}>Textarea</option>
+                                <option value="dropdown" ${field.type === 'dropdown' ? 'selected' : ''}>Dropdown</option>
+                                <option value="number" ${field.type === 'number' ? 'selected' : ''}>Number</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-600 mb-1">Required</label>
+                            <label class="flex items-center">
+                                <input 
+                                    type="checkbox" 
+                                    ${field.required ? 'checked' : ''}
+                                    onchange="updateFieldRequired(${index}, this.checked)"
+                                    class="mr-2"
+                                >
+                                <span class="text-sm">Required field</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="block text-xs text-gray-600 mb-1">Placeholder Text</label>
+                        <input 
+                            type="text" 
+                            value="${field.placeholder}" 
+                            onchange="updateFieldPlaceholder(${index}, this.value)"
+                            class="w-full text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Placeholder text for this field"
+                        >
+                    </div>
+                    
+                    ${field.type === 'dropdown' ? `
+                    <div>
+                        <label class="block text-xs text-gray-600 mb-1">Options (one per line)</label>
+                        <textarea 
+                            onchange="updateFieldOptions(${index}, this.value)"
+                            class="w-full text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 h-20"
+                            placeholder="Option 1&#10;Option 2&#10;Option 3"
+                        >${field.options.join('\\n')}</textarea>
+                    </div>
+                    ` : ''}
+                </div>
+            `).join('');
+            
+            updateButtonStates();
+        }
+
+        // Field update functions
+        function updateFieldName(index, name) {
+            suggestedFields[index].name = name;
+            showUnsavedIndicator();
+        }
+
+        function updateFieldType(index, type) {
+            suggestedFields[index].type = type;
+            renderInputFields(); // Re-render to show/hide options for dropdown
+            showUnsavedIndicator();
+        }
+
+        function updateFieldRequired(index, required) {
+            suggestedFields[index].required = required;
+            showUnsavedIndicator();
+        }
+
+        function updateFieldPlaceholder(index, placeholder) {
+            suggestedFields[index].placeholder = placeholder;
+            showUnsavedIndicator();
+        }
+
+        function updateFieldOptions(index, optionsText) {
+            suggestedFields[index].options = optionsText.split('\\n').filter(opt => opt.trim());
+            showUnsavedIndicator();
+        }
+
+        function removeField(index) {
+            if (confirm('Remove this field?')) {
+                suggestedFields.splice(index, 1);
+                renderInputFields();
+                showUnsavedIndicator();
+                updateSaveButton(); // Update buttons since field count changed
+            }
+        }
+
+        // Update button states based on content
+        function updateButtonStates() {
+            updateSaveButton();
+        }
+
+        // Deploy tool - REAL IMPLEMENTATION!
+        async function deployTool() {
+            try {
+                const deployButton = document.getElementById('deployButton');
+                deployButton.disabled = true;
+                deployButton.textContent = 'Deploying...';
+                
+                showStatus('Deploying your AI tool...', 'blue');
+
+                const response = await PMConfig.fetch(`api/deploy/${projectId}`, {
+                    method: 'POST'
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showStatus(`🎉 Tool deployed successfully! Your AI tool is now live at: ${data.deployment.url}`, 'green');
+                    
+                    // Show deployment details
+                    const deploymentInfo = document.createElement('div');
+                    deploymentInfo.className = 'bg-green-50 border-l-4 border-green-400 p-4 rounded mt-4';
+                    deploymentInfo.innerHTML = `
+                        <h4 class="font-bold text-green-800 mb-2">🚀 Deployment Successful!</h4>
+                        <p class="text-green-700 mb-2"><strong>Project:</strong> ${data.project.name}</p>
+                        <p class="text-green-700 mb-2"><strong>URL:</strong> <a href="${data.deployment.url}" target="_blank" class="underline font-mono">${data.deployment.url}</a></p>
+                        <p class="text-green-700 mb-2"><strong>Files Generated:</strong> ${data.files.join(', ')}</p>
+                        <div class="mt-3 space-x-2">
+                            <button onclick="window.open('${data.deployment.url}', '_blank')" class="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700">
+                                View Live Tool
+                            </button>
+                            <button onclick="window.location.href='/'" class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700">
+                                Back to Dashboard
+                            </button>
+                        </div>
+                    `;
+                    
+                    document.getElementById('statusMessages').appendChild(deploymentInfo);
+                    
+                    deployButton.textContent = 'Deployed!';
+                    deployButton.classList.remove('bg-purple-500', 'hover:bg-purple-600');
+                    deployButton.classList.add('bg-green-500', 'hover:bg-green-600');
+                    
+                } else {
+                    throw new Error(data.error || 'Deployment failed');
+                }
+
+            } catch (error) {
+                console.error('Deploy error:', error);
+                showStatus(`Deployment failed: ${error.message}`, 'red');
+                
+                const deployButton = document.getElementById('deployButton');
+                deployButton.disabled = false;
+                deployButton.textContent = 'Deploy Tool';
+            }
+        }
+
+        // Show status message
+        function showStatus(message, color) {
+            const statusDiv = document.getElementById('statusMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `bg-${color}-100 border-l-4 border-${color}-500 p-4 rounded`;
+            messageDiv.innerHTML = `<p class="text-${color}-700">${message}</p>`;
+            
+            statusDiv.appendChild(messageDiv);
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                if (messageDiv.parentNode) {
+                    messageDiv.parentNode.removeChild(messageDiv);
+                }
+            }, 5000);
+        }
+
+        // Show chat error
+        function showChatError(message) {
+            const errorDiv = document.getElementById('chatError');
+            errorDiv.textContent = message;
+            errorDiv.classList.remove('hidden');
+            
+            setTimeout(() => {
+                errorDiv.classList.add('hidden');
+            }, 5000);
+        }
+
+        // Show general error
+        function showError(message) {
+            showStatus(message, 'red');
+        }
+
+        // Logout
+        function logout() {
+            localStorage.removeItem('authToken');
+            window.location.href = '/';
+        }
+    </script>
+</body>
+</html>

@@ -36,3 +36,13 @@ Thumbs.db
 # Temporary files
 tmp/
 temp/
+*.tmp
+*.sql
+
+# Frontend build artifacts
+frontend/node_modules/
+frontend/package-lock.json
+
+# Deployed tools (keep structure, ignore specific deployments)  
+deployed-tools/*/
+!deployed-tools/.gitkeep

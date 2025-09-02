@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prompt Engineer v4 - AI-Guided Tool Creation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="js/config.js"></script>
+    <link rel="stylesheet" href="css/tailwind.css">
+    <style>
+        .chat-message {
+            animation: fadeInUp 0.3s ease-out;
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .typing-indicator {
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        
+        .ai-avatar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .expert-card {
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+        
+        .expert-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            border-color: #667eea;
+        }
+        
+        .expert-card.selected {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #667eea10, #764ba210);
+        }
+        
+        .stage-indicator {
+            position: relative;
+        }
+        
+        .stage-indicator::after {
+            content: '';
+            position: absolute;
+            right: -20px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 0;
+            height: 0;
+            border-left: 10px solid #667eea;
+            border-top: 8px solid transparent;
+            border-bottom: 8px solid transparent;
+        }
+        
+        .stage-indicator.completed {
+            background: #10b981;
+            color: white;
+        }
+        
+        .stage-indicator.active {
+            background: #667eea;
+            color: white;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center">
+                    <div class="ai-avatar w-10 h-10 rounded-full flex items-center justify-center text-white font-bold mr-3">
+                        AI
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-semibold text-gray-900">Prompt Engineer v4</h1>
+                        <p class="text-sm text-gray-500">AI-Guided Tool Creation</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="text-sm text-gray-500">
+                        <span class="font-medium text-green-600">●</span> AI Assistant Active
+                    </div>
+                    <a href="index.html" class="text-blue-600 hover:text-blue-800">← Back to Dashboard</a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Progress Indicator -->
+    <div class="bg-white border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div class="flex items-center justify-center space-x-2 overflow-x-auto">
+                <div id="stage-greeting" class="stage-indicator px-3 py-1 rounded text-xs font-medium bg-gray-100 text-gray-600 whitespace-nowrap">
+                    1. Welcome
+                </div>
+                <div id="stage-expert" class="stage-indicator px-3 py-1 rounded text-xs font-medium bg-gray-100 text-gray-600 whitespace-nowrap">
+                    2. Choose Expert
+                </div>
+                <div id="stage-purpose" class="stage-indicator px-3 py-1 rounded text-xs font-medium bg-gray-100 text-gray-600 whitespace-nowrap">
+                    3. Define Purpose
+                </div>
+                <div id="stage-fields" class="stage-indicator px-3 py-1 rounded text-xs font-medium bg-gray-100 text-gray-600 whitespace-nowrap">
+                    4. Design Fields
+                </div>
+                <div id="stage-details" class="stage-indicator px-3 py-1 rounded text-xs font-medium bg-gray-100 text-gray-600 whitespace-nowrap">
+                    5. Tool Details
+                </div>
+                <div id="stage-deploy" class="stage-indicator px-3 py-1 rounded text-xs font-medium bg-gray-100 text-gray-600 whitespace-nowrap">
+                    6. Deploy
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Loading State -->
+        <div id="loading" class="text-center py-12">
+            <div class="ai-avatar w-16 h-16 rounded-full flex items-center justify-center text-white font-bold mx-auto mb-4 typing-indicator">
+                AI
+            </div>
+            <h2 class="text-xl font-semibold text-gray-900 mb-2">Starting AI Assistant...</h2>
+            <p class="text-gray-600">Preparing your personalized prompt engineering experience</p>
+        </div>
+
+        <!-- Chat Interface -->
+        <div id="chat-interface" class="hidden">
+            <!-- Chat Messages -->
+            <div id="chat-messages" class="space-y-6 mb-8 max-h-96 overflow-y-auto">
+                <!-- Messages will be dynamically inserted here -->
+            </div>
+
+            <!-- Expert Selection -->
+            <div id="expert-selection" class="hidden mb-8">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Choose Your AI Expert</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div class="expert-card cursor-pointer p-4 bg-white rounded-lg shadow hover:shadow-lg" data-expert="Story Writer & Creative Fiction Expert">
+                        <div class="text-2xl mb-2">📚</div>
+                        <h4 class="font-semibold text-gray-900 mb-2">Story Writer</h4>
+                        <p class="text-sm text-gray-600">Expert in creative fiction, narrative structure, and storytelling</p>
+                    </div>
+                    <div class="expert-card cursor-pointer p-4 bg-white rounded-lg shadow hover:shadow-lg" data-expert="Business & Marketing Consultant">
+                        <div class="text-2xl mb-2">💼</div>
+                        <h4 class="font-semibold text-gray-900 mb-2">Business Consultant</h4>
+                        <p class="text-sm text-gray-600">Strategic planning, marketing, and business development</p>
+                    </div>
+                    <div class="expert-card cursor-pointer p-4 bg-white rounded-lg shadow hover:shadow-lg" data-expert="Health & Wellness Coach">
+                        <div class="text-2xl mb-2">💪</div>
+                        <h4 class="font-semibold text-gray-900 mb-2">Health Coach</h4>
+                        <p class="text-sm text-gray-600">Nutrition, fitness, and lifestyle optimization</p>
+                    </div>
+                    <div class="expert-card cursor-pointer p-4 bg-white rounded-lg shadow hover:shadow-lg" data-expert="Educational Content Creator">
+                        <div class="text-2xl mb-2">🎓</div>
+                        <h4 class="font-semibold text-gray-900 mb-2">Education Specialist</h4>
+                        <p class="text-sm text-gray-600">Learning design and educational content creation</p>
+                    </div>
+                    <div class="expert-card cursor-pointer p-4 bg-white rounded-lg shadow hover:shadow-lg" data-expert="Technical Writing Specialist">
+                        <div class="text-2xl mb-2">⚙️</div>
+                        <h4 class="font-semibold text-gray-900 mb-2">Technical Writer</h4>
+                        <p class="text-sm text-gray-600">Documentation, user guides, and technical content</p>
+                    </div>
+                    <div class="expert-card cursor-pointer p-4 bg-white rounded-lg shadow hover:shadow-lg" data-expert="Custom Expert">
+                        <div class="text-2xl mb-2">✨</div>
+                        <h4 class="font-semibold text-gray-900 mb-2">Custom Expert</h4>
+                        <p class="text-sm text-gray-600">I'll describe my own expert type</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat Input -->
+            <div id="chat-input-area" class="hidden">
+                <div class="flex space-x-4">
+                    <div class="flex-1">
+                        <textarea 
+                            id="chat-input" 
+                            rows="3" 
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                            placeholder="Type your message here..."
+                        ></textarea>
+                    </div>
+                    <div class="flex flex-col space-y-2">
+                        <button 
+                            id="send-message" 
+                            class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 font-medium"
+                        >
+                            Send
+                        </button>
+                        <button 
+                            id="voice-input" 
+                            class="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                            title="Voice Input (Coming Soon)"
+                            disabled
+                        >
+                            🎤
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div id="action-buttons" class="hidden mt-6 flex justify-center space-x-4">
+                <button id="deploy-tool" class="px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 font-medium">
+                    🚀 Deploy Tool Now
+                </button>
+                <button id="save-draft" class="px-8 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 font-medium">
+                    💾 Save Draft
+                </button>
+                <button id="make-changes" class="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 font-medium">
+                    ✏️ Make Changes
+                </button>
+            </div>
+
+            <!-- Deployment Success -->
+            <div id="deployment-success" class="hidden mt-8 p-6 bg-green-50 border border-green-200 rounded-lg">
+                <div class="flex items-center mb-4">
+                    <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white font-bold mr-3">✓</div>
+                    <h3 class="text-lg font-semibold text-green-800">Tool Deployed Successfully!</h3>
+                </div>
+                <p class="text-green-700 mb-4">Your AI-powered tool is now live and ready for users.</p>
+                <div class="space-y-2">
+                    <p class="text-sm text-green-600">
+                        <strong>Tool URL:</strong> 
+                        <a id="deployed-url" href="#" target="_blank" class="underline hover:text-green-800"></a>
+                    </p>
+                    <p class="text-sm text-green-600">
+                        <strong>Created with:</strong> Prompt Engineer v4.0
+                    </p>
+                </div>
+                <div class="mt-4 flex space-x-4">
+                    <a id="visit-tool" href="#" target="_blank" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
+                        Visit Tool
+                    </a>
+                    <a href="tool-management.html" class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700">
+                        Manage Tools
+                    </a>
+                    <button id="create-another" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                        Create Another Tool
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="border-t mt-16 py-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-gray-500">
+            <p>&copy; 2025 Prompt Machine v4 - AI-Guided Tool Creation</p>
+            <p class="text-sm mt-2">Powered by advanced conversational AI and prompt engineering</p>
+        </div>
+    </footer>
+
+    <script src="js/prompt-engineer-v4.js?v=2025090117"></script>
+</body>
+</html>
