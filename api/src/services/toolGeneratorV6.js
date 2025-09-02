@@ -121,7 +121,7 @@ class ToolGeneratorV6 {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${project.name} - Free AI-Powered Multi-Step Tool | Prompt Machine v1.0.0</title>
+    <title>${project.name} - Free AI-Powered Multi-Step Tool | Prompt Machine v1.0.0-alpha</title>
     <meta name="description" content="${project.description || `Use ${project.name} to get professional results with AI. Free multi-step tool, no registration required.`}">
     <meta name="keywords" content="AI tool, ${project.name}, free AI, multi-step tool, artificial intelligence">
     <meta name="author" content="Prompt Machine">
@@ -309,7 +309,7 @@ class ToolGeneratorV6 {
         <div class="container mx-auto px-4 text-center">
             <div class="flex flex-col md:flex-row justify-between items-center">
                 <div class="mb-4 md:mb-0">
-                    <p class="text-gray-300">Powered by <a href="https://prompt-machine.com" class="text-blue-400 hover:text-blue-300">Prompt Machine v1.0.0</a></p>
+                    <p class="text-gray-300">Powered by <a href="https://prompt-machine.com" class="text-blue-400 hover:text-blue-300">Prompt Machine v1.0.0-alpha</a></p>
                     <p class="text-gray-400 text-sm mt-1">Built with Prompt Engineer V6 • Advanced AI Technology • Free Forever</p>
                 </div>
                 <div class="text-sm text-gray-400">

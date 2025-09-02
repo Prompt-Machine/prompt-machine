@@ -1,6 +1,6 @@
-# 🚀 Prompt Machine v1.0.0
+# 🚀 Prompt Machine v1.0.0-alpha
 
-[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/yourusername/prompt-machine)
+[![Version](https://img.shields.io/badge/version-1.0.0--alpha-orange.svg)](https://github.com/yourusername/prompt-machine)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/node.js-%3E%3D18.0.0-brightgreen.svg)](https://nodejs.org/)
 [![PostgreSQL](https://img.shields.io/badge/postgresql-%3E%3D14.0-blue.svg)](https://www.postgresql.org/)
@@ -282,7 +282,7 @@ npm run test:coverage
 
 ## 📋 Changelog
 
-### v1.0.0 - Production Release
+### v1.0.0-alpha - Alpha Release
 - ✅ Complete multi-step tool builder (Prompt Engineer V6)
 - ✅ Instant tool deployment system
 - ✅ Advertising monetization platform
