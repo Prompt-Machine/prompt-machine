@@ -121,7 +121,7 @@ class ToolGeneratorV6 {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${project.name} - Free AI-Powered Multi-Step Tool | Prompt Machine v1.0.0-alpha</title>
+    <title>${project.name} - Free AI-Powered Multi-Step Tool | Prompt Machine v1.0.0-rc</title>
     <meta name="description" content="${project.description || `Use ${project.name} to get professional results with AI. Free multi-step tool, no registration required.`}">
     <meta name="keywords" content="AI tool, ${project.name}, free AI, multi-step tool, artificial intelligence">
     <meta name="author" content="Prompt Machine">
@@ -309,7 +309,7 @@ class ToolGeneratorV6 {
         <div class="container mx-auto px-4 text-center">
             <div class="flex flex-col md:flex-row justify-between items-center">
                 <div class="mb-4 md:mb-0">
-                    <p class="text-gray-300">Powered by <a href="https://prompt-machine.com" class="text-blue-400 hover:text-blue-300">Prompt Machine v1.0.0-alpha</a></p>
+                    <p class="text-gray-300">Powered by <a href="https://prompt-machine.com" class="text-blue-400 hover:text-blue-300">Prompt Machine v1.0.0-rc</a></p>
                     <p class="text-gray-400 text-sm mt-1">Built with Prompt Engineer V6 • Advanced AI Technology • Free Forever</p>
                 </div>
                 <div class="text-sm text-gray-400">
@@ -580,6 +580,7 @@ class MultiStepTool {
         this.projectId = '${project.id}';
         this.projectName = '${project.name}';
         this.systemPrompt = \`${project.system_prompt ? project.system_prompt : `You are ${project.ai_role || 'an AI assistant'}. ${project.ai_persona_description || ''}`}\`.replace(/\\n/g, ' ');
+        this.sessionId = this.generateSessionId();
         
         this.init();
     }
@@ -588,6 +589,9 @@ class MultiStepTool {
         this.setupEventListeners();
         this.updateProgress();
         this.updateButtons();
+        
+        // Track tool view
+        this.trackEvent('view', { initialLoad: true });
     }
     
     setupEventListeners() {
@@ -751,6 +755,10 @@ class MultiStepTool {
         this.showLoading();
         
         try {
+            // Track submission event
+            this.trackEvent('submit', { formData, stepCount: this.totalSteps });
+            
+            const startTime = Date.now();
             const response = await fetch('https://api.prompt-machine.com/api/v6/tools/generate', {
                 method: 'POST',
                 headers: {
@@ -761,14 +769,17 @@ class MultiStepTool {
                     project_name: this.projectName,
                     system_prompt: this.systemPrompt,
                     form_data: formData,
-                    steps_completed: this.totalSteps
+                    steps_completed: this.totalSteps,
+                    session_id: this.sessionId
                 })
             });
             
+            const responseTime = Date.now() - startTime;
             const data = await response.json();
             
             if (response.ok && data.success) {
                 this.showResults(data.result || data.output || 'AI processing completed successfully!');
+                this.trackEvent('complete', { formData, responseTime });
                 this.trackUsage(formData);
             } else {
                 throw new Error(data.error || 'Failed to generate AI response');
@@ -776,6 +787,10 @@ class MultiStepTool {
             
         } catch (error) {
             console.error('AI Generation Error:', error);
+            this.trackEvent('error', { 
+                errorMessage: error.message, 
+                formData: formData 
+            });
             this.showError('Sorry, the AI is currently unavailable. Please try again in a moment.');
         } finally {
             this.hideLoading();
@@ -855,6 +870,37 @@ class MultiStepTool {
             });
         } catch (error) {
             console.log('Usage tracking failed:', error.message);
+        }
+    }
+    
+    generateSessionId() {
+        return 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    }
+    
+    async trackEvent(eventType, data = {}) {
+        try {
+            await fetch('https://api.prompt-machine.com/api/analytics/track', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    projectId: this.projectId,
+                    eventType: eventType,
+                    sessionId: this.sessionId,
+                    sessionData: {
+                        projectName: this.projectName,
+                        currentStep: this.currentStep,
+                        totalSteps: this.totalSteps,
+                        userAgent: navigator.userAgent,
+                        timestamp: new Date().toISOString()
+                    },
+                    stepData: data,
+                    responseTime: data.responseTime
+                })
+            });
+        } catch (error) {
+            console.log('Analytics tracking failed:', error.message);
         }
     }
     
