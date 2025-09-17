@@ -1,5 +1,5 @@
 const express = require('express');
-const { authenticateToken } = require('../middleware/auth');
+const { verifyAuth } = require('../middleware/auth');
 const deploymentService = require('../services/deploy');
 const claudeService = require('../services/claude');
 
@@ -11,7 +11,7 @@ deploymentService.ensureDeploymentTables().catch(err => {
 });
 
 // POST /api/deploy/:projectId - Deploy a project as an AI tool
-router.post('/:projectId', authenticateToken, async (req, res) => {
+router.post('/:projectId', verifyAuth, async (req, res) => {
     try {
         const projectId = req.params.projectId;
 
@@ -56,7 +56,7 @@ router.post('/:projectId', authenticateToken, async (req, res) => {
 });
 
 // DELETE /api/deploy/:projectId - Undeploy a project
-router.delete('/:projectId', authenticateToken, async (req, res) => {
+router.delete('/:projectId', verifyAuth, async (req, res) => {
     try {
         const projectId = req.params.projectId;
 
@@ -94,7 +94,7 @@ router.delete('/:projectId', authenticateToken, async (req, res) => {
 });
 
 // GET /api/deploy/:projectId/status - Get deployment status for a project
-router.get('/:projectId/status', authenticateToken, async (req, res) => {
+router.get('/:projectId/status', verifyAuth, async (req, res) => {
     try {
         const projectId = req.params.projectId;
 
@@ -125,7 +125,7 @@ router.get('/:projectId/status', authenticateToken, async (req, res) => {
 });
 
 // GET /api/deploy/list - List all deployments for authenticated user
-router.get('/list', authenticateToken, async (req, res) => {
+router.get('/list', verifyAuth, async (req, res) => {
     try {
         const deployments = await deploymentService.getUserDeployments(req.user.id);
 

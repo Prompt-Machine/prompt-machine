@@ -1,6 +1,6 @@
 const express = require('express');
 const { Pool } = require('pg');
-const { authenticateToken } = require('../middleware/auth');
+const { verifyAuth } = require('../middleware/auth');
 const claudeService = require('../services/claude');
 
 const router = express.Router();
@@ -15,7 +15,7 @@ const pool = new Pool({
 });
 
 // POST /api/prompt-builder/start - Start new conversation for a project
-router.post('/start', authenticateToken, async (req, res) => {
+router.post('/start', verifyAuth, async (req, res) => {
     try {
         const { projectId } = req.body;
 
@@ -100,7 +100,7 @@ router.post('/start', authenticateToken, async (req, res) => {
 });
 
 // POST /api/prompt-builder/message - Send message in existing conversation
-router.post('/message', authenticateToken, async (req, res) => {
+router.post('/message', verifyAuth, async (req, res) => {
     try {
         const { conversationId, message } = req.body;
 
@@ -176,7 +176,7 @@ router.post('/message', authenticateToken, async (req, res) => {
 });
 
 // GET /api/prompt-builder/conversation/:projectId - Get conversation history
-router.get('/conversation/:projectId', authenticateToken, async (req, res) => {
+router.get('/conversation/:projectId', verifyAuth, async (req, res) => {
     try {
         const projectId = req.params.projectId;
 
@@ -225,7 +225,7 @@ router.get('/conversation/:projectId', authenticateToken, async (req, res) => {
 });
 
 // POST /api/prompt-builder/save - Save prompt configuration
-router.post('/save', authenticateToken, async (req, res) => {
+router.post('/save', verifyAuth, async (req, res) => {
     try {
         const { projectId, systemPrompt, fields } = req.body;
 
@@ -283,7 +283,7 @@ router.post('/save', authenticateToken, async (req, res) => {
 });
 
 // GET /api/prompt-builder/health - Health check for Claude API
-router.get('/health', authenticateToken, async (req, res) => {
+router.get('/health', verifyAuth, async (req, res) => {
     try {
         const isHealthy = await claudeService.healthCheck();
         

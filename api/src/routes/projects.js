@@ -1,6 +1,6 @@
 const express = require('express');
 const { Pool } = require('pg');
-const { authenticateToken } = require('../middleware/auth');
+const { verifyAuth } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -23,8 +23,80 @@ function generateSlug(name) {
         .replace(/^-+|-+$/g, ''); // Remove leading/trailing hyphens
 }
 
+// GET /api/projects/user-tools - Get user's tools with analytics
+router.get('/user-tools', verifyAuth, async (req, res) => {
+    try {
+        // Get user's projects from projects_v6 table
+        const projectsResult = await pool.query(`
+            SELECT 
+                p.id,
+                p.name,
+                p.description,
+                p.subdomain,
+                p.deployed,
+                p.enabled,
+                p.created_at,
+                p.updated_at
+            FROM projects_v6 p
+            WHERE p.user_id = $1
+            ORDER BY p.created_at DESC
+        `, [req.user.id]);
+
+        const projects = projectsResult.rows;
+
+        // Get analytics data for each project
+        const projectsWithAnalytics = await Promise.all(
+            projects.map(async (project) => {
+                try {
+                    const analyticsResult = await pool.query(`
+                        SELECT 
+                            COUNT(CASE WHEN event_type = 'view' THEN 1 END) as views,
+                            COUNT(CASE WHEN event_type = 'form_complete' THEN 1 END) as completions,
+                            COUNT(DISTINCT session_id) as unique_sessions
+                        FROM tool_analytics_v6 
+                        WHERE project_id = $1
+                    `, [project.id]);
+
+                    const analytics = analyticsResult.rows[0] || {
+                        views: 0,
+                        completions: 0,
+                        unique_sessions: 0
+                    };
+
+                    return {
+                        ...project,
+                        analytics: {
+                            views: parseInt(analytics.views) || 0,
+                            completions: parseInt(analytics.completions) || 0,
+                            uniqueSessions: parseInt(analytics.unique_sessions) || 0
+                        }
+                    };
+                } catch (analyticsError) {
+                    console.error(`Analytics error for project ${project.id}:`, analyticsError);
+                    return {
+                        ...project,
+                        analytics: { views: 0, completions: 0, uniqueSessions: 0 }
+                    };
+                }
+            })
+        );
+
+        res.json({
+            success: true,
+            tools: projectsWithAnalytics
+        });
+
+    } catch (error) {
+        console.error('Get user tools error:', error);
+        res.status(500).json({ 
+            success: false,
+            error: 'Failed to retrieve user tools' 
+        });
+    }
+});
+
 // GET /api/projects - List all projects for authenticated user
-router.get('/', authenticateToken, async (req, res) => {
+router.get('/', verifyAuth, async (req, res) => {
     try {
         const result = await pool.query(
             `SELECT 
@@ -64,7 +136,7 @@ router.get('/', authenticateToken, async (req, res) => {
 });
 
 // POST /api/projects - Create new project
-router.post('/', authenticateToken, async (req, res) => {
+router.post('/', verifyAuth, async (req, res) => {
     try {
         const { name, description } = req.body;
 
@@ -134,7 +206,7 @@ router.post('/', authenticateToken, async (req, res) => {
 });
 
 // GET /api/projects/:id - Get single project
-router.get('/:id', authenticateToken, async (req, res) => {
+router.get('/:id', verifyAuth, async (req, res) => {
     try {
         const projectId = req.params.id;
 
@@ -200,7 +272,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
 });
 
 // PUT /api/projects/:id - Update project
-router.put('/:id', authenticateToken, async (req, res) => {
+router.put('/:id', verifyAuth, async (req, res) => {
     try {
         const projectId = req.params.id;
         const { name, subdomain } = req.body;
@@ -305,7 +377,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
 });
 
 // DELETE /api/projects/:id - Delete project
-router.delete('/:id', authenticateToken, async (req, res) => {
+router.delete('/:id', verifyAuth, async (req, res) => {
     try {
         const projectId = req.params.id;
 
@@ -366,7 +438,7 @@ router.delete('/:id', authenticateToken, async (req, res) => {
 });
 
 // GET /api/projects/check-subdomain/:subdomain - Check if subdomain is available
-router.get('/check-subdomain/:subdomain', authenticateToken, async (req, res) => {
+router.get('/check-subdomain/:subdomain', verifyAuth, async (req, res) => {
     try {
         const { subdomain } = req.params;
         

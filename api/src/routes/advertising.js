@@ -1,6 +1,6 @@
 const express = require('express');
 const { Pool } = require('pg');
-const { authenticateToken } = require('../middleware/auth');
+const { verifyAuth } = require('../middleware/auth');
 
 // Database configuration
 const pool = new Pool({
@@ -15,7 +15,7 @@ const pool = new Pool({
 const router = express.Router();
 
 // GET /api/advertising/tool/:toolId - Get advertising settings for a tool
-router.get('/tool/:toolId', authenticateToken, async (req, res) => {
+router.get('/tool/:toolId', verifyAuth, async (req, res) => {
     try {
         const { toolId } = req.params;
         
@@ -69,7 +69,7 @@ router.get('/tool/:toolId', authenticateToken, async (req, res) => {
 });
 
 // POST /api/advertising/tool/:toolId - Create or update advertising settings
-router.post('/tool/:toolId', authenticateToken, async (req, res) => {
+router.post('/tool/:toolId', verifyAuth, async (req, res) => {
     try {
         const { toolId } = req.params;
         const {
@@ -194,7 +194,7 @@ router.post('/tool/:toolId', authenticateToken, async (req, res) => {
 });
 
 // DELETE /api/advertising/tool/:toolId - Remove advertising from a tool
-router.delete('/tool/:toolId', authenticateToken, async (req, res) => {
+router.delete('/tool/:toolId', verifyAuth, async (req, res) => {
     try {
         const { toolId } = req.params;
         
@@ -228,7 +228,7 @@ router.delete('/tool/:toolId', authenticateToken, async (req, res) => {
 });
 
 // GET /api/advertising/stats/:toolId - Get advertising stats for a tool
-router.get('/stats/:toolId', authenticateToken, async (req, res) => {
+router.get('/stats/:toolId', verifyAuth, async (req, res) => {
     try {
         const { toolId } = req.params;
         

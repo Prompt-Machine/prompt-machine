@@ -50,9 +50,9 @@
         // Production environment - detect based on current domain
         config.environment = 'production';
         
-        // If we're on app.domain.com, API should be api.domain.com
+        // If we're on app.domain.com, use /api path (nginx proxy)
         if (hostname.startsWith('app.')) {
-            config.api.baseUrl = `${protocol}//${hostname.replace('app.', 'api.')}`;
+            config.api.baseUrl = `${protocol}//${hostname}`;
         } 
         // If we're on a custom domain, assume API is at api subdomain
         else if (hostname.includes('.')) {

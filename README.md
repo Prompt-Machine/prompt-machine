@@ -1,11 +1,11 @@
-# 🚀 Prompt Machine v1.0.0-rc
+# 🚀 Prompt Machine v1.5.0rc
 
-[![Version](https://img.shields.io/badge/version-1.0.0--rc-blue.svg)](https://github.com/yourusername/prompt-machine)
+[![Version](https://img.shields.io/badge/version-1.5.0rc-blue.svg)](https://github.com/yourusername/prompt-machine)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/node.js-%3E%3D18.0.0-brightgreen.svg)](https://nodejs.org/)
 [![PostgreSQL](https://img.shields.io/badge/postgresql-%3E%3D14.0-blue.svg)](https://www.postgresql.org/)
 
-> Professional AI tool builder and deployment platform. Create, customize, and deploy AI-powered tools with multi-step workflows using Prompt Engineer V6.
+> Professional AI tool builder and deployment platform. Create, customize, and deploy AI-powered tools with multi-step workflows using Prompt Engineer v6.1.0rc.
 
 ## 🌟 Features
 
@@ -14,8 +14,10 @@
 - **⚡ Instant Deployment**: Deploy tools to custom subdomains with one click
 - **🤖 AI-Powered Generation**: Intelligent field recommendations and form building
 - **💰 Monetization Ready**: Built-in advertising system with Google AdSense integration
-- **📊 Analytics Dashboard**: Track tool performance and user engagement
+- **📊 Analytics Dashboard**: Real-time analytics with comprehensive reporting
 - **🔐 Secure Authentication**: JWT-based user management and access control
+- **👥 Advanced User Management**: Role-based permissions and access control
+- **📦 Package Management**: Subscription tiers and feature control
 
 ### Advanced Capabilities
 - **📝 Dynamic Form Generation**: AI-generated forms with smart field types
@@ -24,6 +26,8 @@
 - **📱 Mobile Responsive**: Optimized for all devices and screen sizes
 - **🌐 Custom Domains**: Deploy tools to branded subdomains
 - **💳 Payment Integration**: Ready for premium features and subscriptions
+- **🎮 Early Access System**: Beta feature management and controlled rollouts
+- **📈 Enhanced Analytics**: Deep insights with data export capabilities
 
 ## 🏗️ Architecture
 
@@ -114,7 +118,7 @@ JWT_SECRET=your-jwt-secret
 1. **Access the Dashboard**: Navigate to `/` and log in
 2. **Create New Project**: Click "Create Project" button
 3. **Configure Tool**: Set up AI role, persona, and system prompts
-4. **Build Multi-Step Form**: Use Prompt Engineer V6 to create workflow steps
+4. **Build Multi-Step Form**: Use Prompt Engineer v6.1.0rc to create workflow steps
 5. **Deploy**: Click deploy to generate live tool at `toolname.tool.yourdomain.com`
 
 ### Example Tool Creation
@@ -281,6 +285,16 @@ npm run test:coverage
 - Use conventional commit messages
 
 ## 📋 Changelog
+
+### v1.5.0rc - Release Candidate
+- ✅ **Prompt Engineer v6.1.0rc**: Enhanced multi-step tool builder with improved functionality
+- ✅ **Advanced User Management**: Role-based access control and permission systems
+- ✅ **Package Management**: Subscription tiers and feature control
+- ✅ **Enhanced Analytics**: Real-time analytics with data export capabilities  
+- ✅ **Early Access System**: Beta feature management and controlled rollouts
+- ✅ **Security Improvements**: Enhanced authentication and input validation
+- ✅ **Bug Fixes**: Resolved demo warnings and CRUD operation issues
+- ✅ **Code Cleanup**: Removed deprecated files and optimized codebase
 
 ### v1.0.0-alpha - Alpha Release
 - ✅ Complete multi-step tool builder (Prompt Engineer V6)

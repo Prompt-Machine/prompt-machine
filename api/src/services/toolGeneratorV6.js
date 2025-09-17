@@ -121,7 +121,7 @@ class ToolGeneratorV6 {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${project.name} - Free AI-Powered Multi-Step Tool | Prompt Machine v1.0.0-rc</title>
+    <title>${project.name} - Free AI-Powered Multi-Step Tool | Prompt Machine v1.5.0rc</title>
     <meta name="description" content="${project.description || `Use ${project.name} to get professional results with AI. Free multi-step tool, no registration required.`}">
     <meta name="keywords" content="AI tool, ${project.name}, free AI, multi-step tool, artificial intelligence">
     <meta name="author" content="Prompt Machine">
@@ -185,7 +185,7 @@ class ToolGeneratorV6 {
                     <p class="text-gray-600 mt-1">Multi-Step AI Tool • Powered by Advanced AI</p>
                 </div>
                 <div class="text-sm text-gray-500">
-                    Free • No Registration Required
+                    ${project.access_level === 'public' ? 'Free • No Registration Required' : 'Requires User Account'}
                 </div>
             </div>
         </div>
@@ -227,8 +227,52 @@ class ToolGeneratorV6 {
                 </div>
             </div>
 
+            <!-- Authentication Gate (for private tools) -->
+            ${project.access_level !== 'public' ? `
+            <div id="authGate" class="bg-white rounded-lg shadow-lg p-8 mb-8">
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-lock text-blue-600 text-2xl"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-gray-800 mb-2">Sign In Required</h3>
+                    <p class="text-gray-600 mb-6">This is a premium tool that requires user authentication.</p>
+                    
+                    <div class="max-w-md mx-auto">
+                        <div class="space-y-4">
+                            <div>
+                                <input type="email" id="authEmail" placeholder="Email address" 
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                            <div>
+                                <input type="password" id="authPassword" placeholder="Password"
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                            <button type="button" onclick="authenticateUser()" id="authButton"
+                                    class="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 font-medium">
+                                <span id="authButtonText">Sign In</span>
+                                <span id="authButtonLoading" class="hidden"><i class="fas fa-spinner fa-spin mr-2"></i>Signing in...</span>
+                            </button>
+                        </div>
+                        
+                        <div class="mt-4 pt-4 border-t border-gray-200">
+                            <p class="text-sm text-gray-600">
+                                Don't have an account? 
+                                <a href="https://app.prompt-machine.com/signup.html" target="_blank" class="text-blue-600 hover:text-blue-800 font-medium">
+                                    Sign up for free
+                                </a>
+                            </p>
+                        </div>
+                        
+                        <div id="authError" class="hidden mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                            <p class="text-sm text-red-700" id="authErrorText"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            ` : ''}
+
             <!-- Multi-Step Form Container -->
-            <div class="bg-white rounded-lg shadow-lg">
+            <div id="toolContent" class="bg-white rounded-lg shadow-lg ${project.access_level !== 'public' ? 'hidden' : ''}">
                 <form id="multiStepForm">
                     ${stepsHTML}
                 </form>
@@ -309,7 +353,7 @@ class ToolGeneratorV6 {
         <div class="container mx-auto px-4 text-center">
             <div class="flex flex-col md:flex-row justify-between items-center">
                 <div class="mb-4 md:mb-0">
-                    <p class="text-gray-300">Powered by <a href="https://prompt-machine.com" class="text-blue-400 hover:text-blue-300">Prompt Machine v1.0.0-rc</a></p>
+                    <p class="text-gray-300">Powered by <a href="https://prompt-machine.com" class="text-blue-400 hover:text-blue-300">Prompt Machine v1.5.0rc</a></p>
                     <p class="text-gray-400 text-sm mt-1">Built with Prompt Engineer V6 • Advanced AI Technology • Free Forever</p>
                 </div>
                 <div class="text-sm text-gray-400">
@@ -572,6 +616,164 @@ input[type="checkbox"]:checked {
      */
     generateJavaScript(project) {
         return `// Multi-Step Tool V6 JavaScript
+
+// Authentication functions for private tools
+${project.access_level !== 'public' ? `
+let currentUser = null;
+let authToken = localStorage.getItem('toolAuthToken');
+
+// Check if user is already authenticated
+if (authToken) {
+    validateAuthToken();
+}
+
+async function authenticateUser() {
+    const email = document.getElementById('authEmail').value;
+    const password = document.getElementById('authPassword').value;
+    const authButton = document.getElementById('authButton');
+    const authButtonText = document.getElementById('authButtonText');
+    const authButtonLoading = document.getElementById('authButtonLoading');
+    const authError = document.getElementById('authError');
+    const authErrorText = document.getElementById('authErrorText');
+    
+    if (!email || !password) {
+        showAuthError('Please enter both email and password');
+        return;
+    }
+    
+    // Show loading state
+    authButton.disabled = true;
+    authButtonText.classList.add('hidden');
+    authButtonLoading.classList.remove('hidden');
+    authError.classList.add('hidden');
+    
+    try {
+        const response = await fetch('https://app.prompt-machine.com/api/auth/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ email, password })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok && data.token) {
+            // Check if user has required permissions
+            const hasAccess = await checkUserPermissions(data.token);
+            
+            if (hasAccess) {
+                localStorage.setItem('toolAuthToken', data.token);
+                currentUser = data.user;
+                authToken = data.token;
+                showToolContent();
+            } else {
+                showAuthError('You do not have permission to access this tool. Please contact an administrator.');
+            }
+        } else {
+            showAuthError(data.error || 'Invalid credentials');
+        }
+    } catch (error) {
+        console.error('Authentication error:', error);
+        showAuthError('Connection error. Please try again.');
+    } finally {
+        // Reset loading state
+        authButton.disabled = false;
+        authButtonText.classList.remove('hidden');
+        authButtonLoading.classList.add('hidden');
+    }
+}
+
+async function validateAuthToken() {
+    try {
+        const hasAccess = await checkUserPermissions(authToken);
+        if (hasAccess) {
+            showToolContent();
+        } else {
+            localStorage.removeItem('toolAuthToken');
+            authToken = null;
+        }
+    } catch (error) {
+        localStorage.removeItem('toolAuthToken');
+        authToken = null;
+    }
+}
+
+async function checkUserPermissions(token) {
+    try {
+        // Get user info to check permissions
+        const response = await fetch('https://app.prompt-machine.com/api/auth/me', {
+            headers: {
+                'Authorization': 'Bearer ' + token
+            }
+        });
+        
+        if (!response.ok) return false;
+        
+        const userData = await response.json();
+        const user = userData.user;
+        
+        // Check if tool requires specific package access
+        ${project.required_package_id ? `
+        // This tool requires specific package permissions
+        const packageCheckResponse = await fetch('https://app.prompt-machine.com/api/v6/projects/${project.id}/access-check', {
+            method: 'POST',
+            headers: {
+                'Authorization': 'Bearer ' + token,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                user_id: user.id,
+                project_id: '${project.id}'
+            })
+        });
+        
+        if (!packageCheckResponse.ok) return false;
+        
+        const accessData = await packageCheckResponse.json();
+        return accessData.has_access;
+        ` : `
+        // Tool requires any authenticated user
+        return true;
+        `}
+        
+    } catch (error) {
+        console.error('Permission check error:', error);
+        return false;
+    }
+}
+
+function showAuthError(message) {
+    const authError = document.getElementById('authError');
+    const authErrorText = document.getElementById('authErrorText');
+    authErrorText.textContent = message;
+    authError.classList.remove('hidden');
+}
+
+function showToolContent() {
+    document.getElementById('authGate').classList.add('hidden');
+    document.getElementById('toolContent').classList.remove('hidden');
+    
+    // Initialize the tool
+    window.toolInstance = new MultiStepTool();
+}
+
+// Handle Enter key in auth form
+document.addEventListener('DOMContentLoaded', function() {
+    const authEmail = document.getElementById('authEmail');
+    const authPassword = document.getElementById('authPassword');
+    
+    if (authEmail && authPassword) {
+        [authEmail, authPassword].forEach(input => {
+            input.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    authenticateUser();
+                }
+            });
+        });
+    }
+});
+` : ''}
 
 class MultiStepTool {
     constructor() {
@@ -957,8 +1159,12 @@ function showTemporaryMessage(message) {
 
 // Initialize the multi-step tool when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
+    ${project.access_level === 'public' ? `
     window.multiStepTool = new MultiStepTool();
     console.log('✅ Multi-Step Tool V6 initialized');
+    ` : `
+    console.log('🔒 Private tool - waiting for authentication');
+    `}
 });`;
     }
 

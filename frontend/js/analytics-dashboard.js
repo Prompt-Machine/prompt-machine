@@ -43,8 +43,10 @@ class AnalyticsDashboard {
             const data = await response.json();
 
             if (data.success) {
-                this.displayOverview(data.overview);
-                this.displayProjectsTable(data.projects);
+                this.displayEnhancedOverview(data.data);
+                this.displayTopProjects(data.data.top_projects);
+                this.displayTrends(data.data.trends);
+                this.displayDeviceStats(data.data.device_stats);
             } else {
                 this.showError(data.error || 'Failed to load analytics dashboard');
             }
@@ -354,6 +356,247 @@ class AnalyticsDashboard {
                 successDiv.remove();
             }
         }, 5000);
+    }
+
+    // Enhanced display methods for new analytics system
+    displayEnhancedOverview(data) {
+        const summary = data.summary;
+        
+        // Update overview stats with enhanced data
+        document.getElementById('total-projects').textContent = summary.total_projects || 0;
+        document.getElementById('active-projects').textContent = summary.active_projects || 0;
+        document.getElementById('total-users').textContent = summary.total_users || 0;
+        document.getElementById('total-sessions').textContent = summary.total_sessions || 0;
+        
+        // Add completion rate if element exists
+        const completionRateEl = document.getElementById('avg-completion-rate');
+        if (completionRateEl) {
+            completionRateEl.textContent = `${summary.avg_completion_rate || 0}%`;
+        }
+    }
+
+    displayTopProjects(projects) {
+        const container = document.getElementById('projects-table-body') || document.getElementById('top-projects');
+        
+        if (!container) return;
+        
+        if (projects.length === 0) {
+            container.innerHTML = '<div class="text-center py-8 text-gray-500">No projects found</div>';
+            return;
+        }
+        
+        container.innerHTML = projects.map(project => {
+            const completionRate = parseFloat(project.completion_rate) || 0;
+            const statusBadge = project.name ? 
+                '<span class="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">Active</span>' :
+                '<span class="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-600 rounded-full">Draft</span>';
+            
+            return `
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0">
+                                <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-tools text-blue-600"></i>
+                                </div>
+                            </div>
+                            <div class="ml-4">
+                                <div class="text-sm font-medium text-gray-900">${this.escapeHtml(project.name || 'Untitled Project')}</div>
+                                <div class="text-sm text-gray-500">${project.subdomain ? project.subdomain + '.tool.prompt-machine.com' : 'Not deployed'}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4">${statusBadge}</td>
+                    <td class="px-6 py-4 text-sm text-gray-900">${this.formatNumber(project.total_interactions || 0)}</td>
+                    <td class="px-6 py-4 text-sm text-gray-900">${this.formatNumber(project.unique_sessions || 0)}</td>
+                    <td class="px-6 py-4 text-sm text-gray-900">
+                        <div class="flex items-center">
+                            <div class="flex-1">
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-green-600 h-2 rounded-full" style="width: ${Math.min(completionRate, 100)}%"></div>
+                                </div>
+                            </div>
+                            <div class="ml-2 text-sm text-gray-600">${completionRate.toFixed(1)}%</div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-900">${this.formatNumber(project.completions || 0)}</td>
+                    <td class="px-6 py-4">
+                        <div class="flex items-center space-x-2">
+                            <button onclick="analyticsDashboard.viewEnhancedProjectDetails('${project.id}')" 
+                                    class="text-blue-600 hover:text-blue-900 text-sm">
+                                <i class="fas fa-chart-bar mr-1"></i>View Details
+                            </button>
+                            ${project.subdomain ? `
+                                <a href="https://${project.subdomain}.tool.prompt-machine.com" target="_blank"
+                                   class="text-green-600 hover:text-green-900 text-sm">
+                                    <i class="fas fa-external-link-alt mr-1"></i>Open Tool
+                                </a>
+                            ` : ''}
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    displayTrends(trends) {
+        const ctx = document.getElementById('trends-chart');
+        if (!ctx) return;
+
+        if (this.trendsChart) {
+            this.trendsChart.destroy();
+        }
+
+        const labels = trends.slice().reverse().map(d => this.formatDate(d.date, true));
+        const views = trends.slice().reverse().map(d => parseInt(d.views) || 0);
+        const starts = trends.slice().reverse().map(d => parseInt(d.starts) || 0);
+        const completions = trends.slice().reverse().map(d => parseInt(d.completions) || 0);
+
+        this.trendsChart = new Chart(ctx.getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Views',
+                    data: views,
+                    borderColor: '#3B82F6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    tension: 0.4,
+                    fill: false
+                }, {
+                    label: 'Form Starts',
+                    data: starts,
+                    borderColor: '#F59E0B',
+                    backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                    tension: 0.4,
+                    fill: false
+                }, {
+                    label: 'Completions',
+                    data: completions,
+                    borderColor: '#10B981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    tension: 0.4,
+                    fill: false
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        display: true,
+                        title: { display: true, text: 'Date' }
+                    },
+                    y: {
+                        display: true,
+                        title: { display: true, text: 'Count' },
+                        beginAtZero: true
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
+                    }
+                }
+            }
+        });
+    }
+
+    displayDeviceStats(deviceStats) {
+        const container = document.getElementById('device-stats');
+        if (!container || !deviceStats.length) return;
+
+        container.innerHTML = deviceStats.map(stat => `
+            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div class="flex items-center">
+                    <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                        <i class="fas fa-${this.getDeviceIcon(stat.device_type)} text-blue-600"></i>
+                    </div>
+                    <span class="font-medium text-gray-900 capitalize">${stat.device_type}</span>
+                </div>
+                <div class="text-right">
+                    <div class="text-sm font-bold text-gray-900">${this.formatNumber(stat.count)}</div>
+                    <div class="text-xs text-gray-500">${stat.percentage}%</div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    async viewEnhancedProjectDetails(projectId) {
+        this.currentProjectId = projectId;
+        
+        try {
+            const response = await PMConfig.fetch(`api/analytics/projects/${projectId}?days=30`, {
+                method: 'GET'
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                this.displayEnhancedProjectModal(data.data);
+                document.getElementById('project-detail-modal').classList.remove('hidden');
+            } else {
+                this.showError(data.error || 'Failed to load project details');
+            }
+
+        } catch (error) {
+            console.error('Error loading enhanced project details:', error);
+            this.showError('Failed to load project details');
+        }
+    }
+
+    displayEnhancedProjectModal(projectData) {
+        // Update modal content with enhanced project data
+        const modal = document.getElementById('project-detail-modal');
+        if (!modal) return;
+
+        // Update modal title
+        const titleElement = modal.querySelector('h3');
+        if (titleElement) {
+            titleElement.textContent = `Analytics: ${projectData.project.name}`;
+        }
+
+        // Display enhanced metrics
+        this.displayEnhancedMetrics(projectData.metrics);
+        this.displayProjectTrends(projectData.daily_trends);
+        this.displayFeedbackSummary(projectData.feedback);
+        this.displayTrafficBreakdown(projectData.traffic_breakdown);
+    }
+
+    displayEnhancedMetrics(metrics) {
+        // Update individual metric displays if elements exist
+        const metricsMap = {
+            'modal-total-views': metrics.total_views,
+            'modal-unique-visitors': metrics.unique_visitors,
+            'modal-form-starts': metrics.form_starts,
+            'modal-completions': metrics.form_completions,
+            'modal-completion-rate': `${metrics.completion_rate}%`,
+            'modal-bounce-rate': `${metrics.bounce_rate}%`,
+            'modal-error-rate': `${metrics.error_rate}%`,
+            'modal-avg-session': `${Math.round(metrics.avg_session_duration)}s`,
+            'modal-avg-response': `${Math.round(metrics.avg_response_time)}ms`
+        };
+
+        Object.entries(metricsMap).forEach(([id, value]) => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.textContent = value;
+            }
+        });
+    }
+
+    getDeviceIcon(deviceType) {
+        const icons = {
+            'desktop': 'desktop',
+            'mobile': 'mobile-alt',
+            'tablet': 'tablet-alt'
+        };
+        return icons[deviceType] || 'device';
     }
 }
 

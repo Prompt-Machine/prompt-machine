@@ -1,4 +1,4 @@
-// Modern Dashboard JavaScript for Prompt Machine v1.0.0-rc
+// Modern Dashboard JavaScript for Prompt Machine v1.5.0rc
 // Mobile-first, professional UI components
 
 class DashboardV2 {

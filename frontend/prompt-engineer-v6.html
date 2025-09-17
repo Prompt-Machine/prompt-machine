@@ -3,9 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Prompt Engineer V6 - Multi-Step Project Builder | Prompt Machine v1.0.0-rc</title>
+    <title>Prompt Engineer v6.1.0rc - Multi-Step Project Builder | Prompt Machine v1.5.0rc</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="js/config.js"></script>
+    <script src="js/navigation.js"></script>
+    <script src="js/field-customization.js"></script>
     <style>
         .project-card {
             transition: all 0.2s ease;
@@ -43,27 +46,7 @@
 </head>
 <body class="bg-gray-50 min-h-screen">
     
-    <!-- Header -->
-    <header class="bg-white shadow-sm border-b">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center py-4">
-                <div class="flex items-center space-x-4">
-                    <div class="bg-gradient-to-r from-purple-600 to-blue-600 w-10 h-10 rounded-full flex items-center justify-center text-white font-bold">
-                        V6
-                    </div>
-                    <div>
-                        <h1 class="text-xl font-semibold text-gray-900">Prompt Engineer V6</h1>
-                        <p class="text-sm text-gray-500">Multi-Step Project Builder</p>
-                    </div>
-                </div>
-                <div class="flex items-center space-x-4">
-                    <div class="w-3 h-3 bg-green-500 rounded-full"></div>
-                    <span class="text-sm text-gray-600">AI Engine Active</span>
-                    <a href="index.html" class="text-blue-600 hover:text-blue-800 font-medium">← Dashboard</a>
-                </div>
-            </div>
-        </div>
-    </header>
+    <!-- Navigation will be injected here by navigation.js -->
 
     <div class="max-w-7xl mx-auto p-6">
         
@@ -73,7 +56,13 @@
             <!-- Project List View -->
             <div id="project-list-view">
                 <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-2xl font-bold text-gray-800">Your Projects</h2>
+                    <div class="flex items-center space-x-4">
+                        <button onclick="window.location.href='/admin-panel.html'" class="text-gray-600 hover:text-gray-800 flex items-center space-x-2 transition-colors">
+                            <i class="fas fa-arrow-left"></i>
+                            <span>Back to Dashboard</span>
+                        </button>
+                        <h2 class="text-2xl font-bold text-gray-800">Your Projects</h2>
+                    </div>
                     <button id="create-project-btn" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2">
                         <i class="fas fa-plus"></i>
                         <span>Create New Project</span>
@@ -106,6 +95,10 @@
                             <button id="back-to-projects" class="text-gray-600 hover:text-gray-800">
                                 <i class="fas fa-arrow-left mr-2"></i>
                                 Back to Projects
+                            </button>
+                            <button onclick="window.location.href='/admin-panel.html'" class="text-blue-600 hover:text-blue-800 text-sm">
+                                <i class="fas fa-tachometer-alt mr-1"></i>
+                                Dashboard
                             </button>
                             <div>
                                 <h2 id="project-title" class="text-xl font-semibold text-gray-900">Project Editor</h2>
@@ -341,6 +334,92 @@
                     </div>
                 </div>
                 
+                <!-- Access Control Settings -->
+                <div class="mt-6 bg-blue-50 rounded-lg p-4">
+                    <h4 class="font-medium text-gray-900 mb-3">
+                        <i class="fas fa-lock mr-2"></i>Access Control
+                    </h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Access Level</label>
+                            <select id="settings-access-level" class="w-full p-2 border border-gray-300 rounded focus:ring-1 focus:ring-blue-500">
+                                <option value="public">Public - Anyone can access</option>
+                                <option value="registered">Registered Users Only</option>
+                                <option value="package">Package Required</option>
+                            </select>
+                        </div>
+                        <div id="package-selection-container" class="hidden">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Required Package</label>
+                            <select id="settings-required-package" class="w-full p-2 border border-gray-300 rounded focus:ring-1 focus:ring-blue-500">
+                                <option value="">Loading packages...</option>
+                            </select>
+                        </div>
+                    </div>
+                    <p class="text-xs text-gray-600 mt-2">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Control who can access this tool based on their subscription level
+                    </p>
+                </div>
+
+                <!-- Advertisement Settings -->
+                <div class="mt-6 bg-green-50 rounded-lg p-4">
+                    <h4 class="font-medium text-gray-900 mb-3">
+                        <i class="fas fa-ad mr-2"></i>Advertisement Settings
+                    </h4>
+                    <div class="space-y-3">
+                        <div class="flex items-center space-x-2">
+                            <input type="checkbox" id="settings-ads-enabled" class="rounded text-blue-600">
+                            <label for="settings-ads-enabled" class="text-sm font-medium text-gray-700">Enable Advertisements</label>
+                        </div>
+                        <div id="ad-configuration" class="hidden space-y-3 pl-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Google Ads Client ID</label>
+                                    <input type="text" id="settings-google-client-id" 
+                                           placeholder="ca-pub-xxxxxxxxxx" 
+                                           class="w-full p-2 border border-gray-300 rounded focus:ring-1 focus:ring-blue-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Google Ads Slot ID</label>
+                                    <input type="text" id="settings-google-slot-id" 
+                                           placeholder="xxxxxxxxxx" 
+                                           class="w-full p-2 border border-gray-300 rounded focus:ring-1 focus:ring-blue-500">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-3 gap-4">
+                                <div class="flex items-center space-x-2">
+                                    <input type="checkbox" id="settings-header-ads" class="rounded text-blue-600">
+                                    <label for="settings-header-ads" class="text-sm text-gray-700">Header Ads</label>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <input type="checkbox" id="settings-footer-ads" class="rounded text-blue-600">
+                                    <label for="settings-footer-ads" class="text-sm text-gray-700">Footer Ads</label>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <input type="checkbox" id="settings-sidebar-ads" class="rounded text-blue-600">
+                                    <label for="settings-sidebar-ads" class="text-sm text-gray-700">Sidebar Ads</label>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="flex items-center space-x-2">
+                                    <input type="checkbox" id="settings-revenue-share" class="rounded text-blue-600">
+                                    <label for="settings-revenue-share" class="text-sm text-gray-700">Enable Revenue Sharing</label>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Platform Revenue %</label>
+                                    <input type="number" id="settings-platform-percentage" 
+                                           min="0" max="100" step="0.1" value="10.0"
+                                           class="w-full p-2 border border-gray-300 rounded focus:ring-1 focus:ring-blue-500">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-xs text-gray-600 mt-2">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Configure advertisements to monetize your deployed tools
+                    </p>
+                </div>
+                
                 <div class="mt-6 bg-gray-50 rounded-lg p-4">
                     <div class="flex items-center space-x-2 mb-3">
                         <input type="checkbox" id="update-subdomain" class="rounded text-blue-600">
@@ -495,7 +574,7 @@
         <div class="container mx-auto px-4 text-center">
             <div class="flex flex-col md:flex-row justify-between items-center">
                 <div class="mb-2 md:mb-0">
-                    <span class="text-lg font-semibold">Prompt Machine v1.0.0-rc</span>
+                    <span class="text-lg font-semibold">Prompt Machine v1.5.0rc</span>
                 </div>
                 <div class="text-sm text-gray-300">
                     Copyright © 2025 <a href="https://llnet.ca" target="_blank" class="text-blue-400 hover:text-blue-300">LLnet Inc</a> & 
@@ -508,5 +587,917 @@
     <!-- Load JavaScript -->
     <script src="js/config.js"></script>
     <script src="js/prompt-engineer-v6.js"></script>
+    <script>
+        // Authentication guard
+        function checkAuthentication() {
+            const token = localStorage.getItem('authToken');
+            const currentUser = localStorage.getItem('currentUser');
+            
+            if (!token || !currentUser) {
+                // Clear any invalid tokens
+                localStorage.removeItem('authToken');
+                localStorage.removeItem('currentUser');
+                
+                // Redirect to login
+                window.location.href = '/index.html';
+                return false;
+            }
+            return true;
+        }
+
+        // =====================================================
+        // FIELD CUSTOMIZATION SYSTEM
+        // =====================================================
+        
+        let currentProject = null;
+        let currentStep = null;
+        let currentFields = [];
+        let fieldEditModal = null;
+
+        // Load projects list
+        async function loadProjects() {
+            try {
+                const response = await PMConfig.fetch('api/v6/projects');
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayProjects(data.projects);
+                } else {
+                    showToast('Failed to load projects', 'error');
+                }
+            } catch (error) {
+                console.error('Error loading projects:', error);
+                showToast('Failed to load projects', 'error');
+            }
+        }
+
+        function displayProjects(projects) {
+            const container = document.getElementById('projects-grid');
+            const emptyState = document.getElementById('empty-state');
+            
+            if (projects.length === 0) {
+                container.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+                return;
+            }
+            
+            emptyState.classList.add('hidden');
+            container.classList.remove('hidden');
+            
+            container.innerHTML = projects.map(project => `
+                <div class="project-card bg-white rounded-lg shadow-sm border p-6" onclick="openProjectEditor('${project.id}')">
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="flex-1">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-1">${project.name}</h3>
+                            <p class="text-sm text-gray-600">${project.description || 'No description'}</p>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="px-2 py-1 text-xs font-medium rounded-full ${project.deployed ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}">
+                                ${project.deployed ? 'Live' : 'Draft'}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between text-sm text-gray-500">
+                        <span>${project.steps?.length || 0} steps</span>
+                        <span>Updated ${new Date(project.updated_at).toLocaleDateString()}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Open project editor
+        async function openProjectEditor(projectId) {
+            try {
+                const response = await PMConfig.fetch(`api/v6/projects/${projectId}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    currentProject = data.project;
+                    document.getElementById('project-list-view').classList.add('hidden');
+                    document.getElementById('project-editor-view').classList.remove('hidden');
+                    
+                    // Update project info
+                    document.getElementById('project-title').textContent = currentProject.name;
+                    document.getElementById('project-description').textContent = currentProject.description || 'No description';
+                    
+                    // Load project steps
+                    displaySteps(currentProject.steps);
+                    
+                    if (currentProject.steps.length > 0) {
+                        selectStep(currentProject.steps[0]);
+                    }
+                } else {
+                    showToast('Failed to load project', 'error');
+                }
+            } catch (error) {
+                console.error('Error loading project:', error);
+                showToast('Failed to load project', 'error');
+            }
+        }
+
+        function displaySteps(steps) {
+            const container = document.getElementById('steps-list');
+            container.innerHTML = steps.map(step => `
+                <div class="step-item p-3 rounded cursor-pointer hover:bg-gray-50 border-l-4 border-transparent" 
+                     data-step-id="${step.id}" onclick="selectStep(${JSON.stringify(step).replace(/"/g, '&quot;')})">
+                    <div class="font-medium text-gray-900">${step.name}</div>
+                    <div class="text-sm text-gray-600">${step.fields?.length || 0} fields</div>
+                </div>
+            `).join('');
+        }
+
+        function selectStep(step) {
+            currentStep = step;
+            currentFields = step.fields || [];
+            
+            // Update step selection UI
+            document.querySelectorAll('.step-item').forEach(item => {
+                if (item.dataset.stepId === step.id) {
+                    item.classList.add('border-blue-500', 'bg-blue-50');
+                } else {
+                    item.classList.remove('border-blue-500', 'bg-blue-50');
+                }
+            });
+            
+            displayStepEditor(step);
+        }
+
+        function displayStepEditor(step) {
+            const container = document.getElementById('step-editor');
+            
+            container.innerHTML = `
+                <div class="mb-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <h3 class="text-xl font-semibold text-gray-900">${step.name}</h3>
+                            <p class="text-sm text-gray-600">${step.description || 'No description'}</p>
+                        </div>
+                        <button onclick="addNewField('${step.id}')" class="btn-primary">
+                            <i class="fas fa-plus mr-2"></i>Add Field
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="space-y-4" id="fields-container">
+                    ${step.fields?.map(field => generateFieldCard(field)).join('') || 
+                      '<div class="text-center text-gray-500 py-12">No fields yet. Add your first field to get started.</div>'}
+                </div>
+            `;
+            
+            // Make fields sortable with drag and drop
+            initializeDragAndDrop();
+        }
+
+        function generateFieldCard(field) {
+            return `
+                <div class="field-card bg-white rounded-lg border p-4" data-field-id="${field.id}">
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="flex items-center space-x-3 flex-1">
+                            <div class="drag-handle text-gray-400 hover:text-gray-600 cursor-grab">
+                                <i class="fas fa-grip-vertical"></i>
+                            </div>
+                            <div class="flex-1">
+                                <div class="flex items-center space-x-2 mb-1">
+                                    <h4 class="font-medium text-gray-900">${field.label}</h4>
+                                    <span class="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">${field.field_type}</span>
+                                    ${field.required ? '<span class="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">Required</span>' : ''}
+                                </div>
+                                <p class="text-sm text-gray-600">${field.description || field.placeholder || 'No description'}</p>
+                                ${field.choices?.length > 0 ? `
+                                    <div class="mt-2">
+                                        <div class="text-xs text-gray-500 mb-1">Options:</div>
+                                        <div class="flex flex-wrap gap-1">
+                                            ${field.choices.slice(0, 3).map(choice => 
+                                                `<span class="px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded">${choice.choice_label}</span>`
+                                            ).join('')}
+                                            ${field.choices.length > 3 ? `<span class="text-xs text-gray-500">+${field.choices.length - 3} more</span>` : ''}
+                                        </div>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <button onclick="editField('${field.id}')" class="text-blue-600 hover:text-blue-800 p-1">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button onclick="duplicateField('${field.id}')" class="text-green-600 hover:text-green-800 p-1">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                            <button onclick="deleteField('${field.id}')" class="text-red-600 hover:text-red-800 p-1">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Field Preview -->
+                    <div class="mt-4 p-3 bg-gray-50 rounded">
+                        <div class="text-xs font-medium text-gray-700 mb-2">Preview:</div>
+                        ${generateFieldPreview(field)}
+                    </div>
+                </div>
+            `;
+        }
+
+        function generateFieldPreview(field) {
+            const commonAttrs = `
+                placeholder="${field.placeholder || ''}"
+                class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                ${field.required ? 'required' : ''}
+                disabled
+            `;
+            
+            switch (field.field_type) {
+                case 'text':
+                case 'email':
+                case 'url':
+                    return `<input type="${field.field_type}" ${commonAttrs}>`;
+                case 'textarea':
+                    return `<textarea ${commonAttrs} rows="3">${field.placeholder || ''}</textarea>`;
+                case 'number':
+                    return `<input type="number" ${commonAttrs}>`;
+                case 'select':
+                    return `
+                        <select ${commonAttrs}>
+                            <option value="">Choose an option...</option>
+                            ${field.choices?.map(choice => 
+                                `<option value="${choice.choice_value}">${choice.choice_label}</option>`
+                            ).join('') || ''}
+                        </select>
+                    `;
+                case 'radio':
+                    return `
+                        <div class="space-y-2">
+                            ${field.choices?.map((choice, index) => `
+                                <label class="flex items-center">
+                                    <input type="radio" name="preview_${field.id}" value="${choice.choice_value}" class="mr-2" disabled>
+                                    <span class="text-sm">${choice.choice_label}</span>
+                                </label>
+                            `).join('') || '<p class="text-sm text-gray-500">No options configured</p>'}
+                        </div>
+                    `;
+                case 'checkbox':
+                    return `
+                        <div class="space-y-2">
+                            ${field.choices?.map(choice => `
+                                <label class="flex items-center">
+                                    <input type="checkbox" value="${choice.choice_value}" class="mr-2" disabled>
+                                    <span class="text-sm">${choice.choice_label}</span>
+                                </label>
+                            `).join('') || '<p class="text-sm text-gray-500">No options configured</p>'}
+                        </div>
+                    `;
+                case 'file':
+                    return `<input type="file" ${commonAttrs}>`;
+                default:
+                    return `<input type="text" ${commonAttrs}>`;
+            }
+        }
+
+        // Field editing functions
+        async function editField(fieldId) {
+            const field = currentFields.find(f => f.id === fieldId);
+            if (!field) return;
+            
+            showFieldEditModal(field);
+        }
+
+        async function addNewField(stepId) {
+            const newField = {
+                id: null,
+                step_id: stepId,
+                name: '',
+                label: 'New Field',
+                field_type: 'text',
+                placeholder: '',
+                description: '',
+                required: false,
+                choices: []
+            };
+            
+            showFieldEditModal(newField, true);
+        }
+
+        function showFieldEditModal(field, isNew = false) {
+            const choices = field.choices || [];
+            
+            const modalHTML = `
+                <div id="field-edit-modal" class="fixed inset-0 bg-black bg-opacity-50 modal flex items-center justify-center z-50">
+                    <div class="bg-white rounded-lg p-8 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+                        <div class="flex items-center justify-between mb-6">
+                            <h3 class="text-2xl font-semibold text-gray-900">${isNew ? 'Add New Field' : 'Edit Field'}</h3>
+                            <button onclick="closeFieldEditModal()" class="text-gray-400 hover:text-gray-600 text-2xl">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        
+                        <form id="field-edit-form" class="space-y-6">
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                
+                                <!-- Left Column: Basic Properties -->
+                                <div class="space-y-6">
+                                    <h4 class="text-lg font-medium text-gray-900 border-b pb-2">Field Properties</h4>
+                                    
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Field Label *</label>
+                                        <input type="text" name="label" value="${field.label}" required
+                                               class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                               placeholder="What users will see">
+                                    </div>
+                                    
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Field Name (Internal)</label>
+                                        <input type="text" name="name" value="${field.name}"
+                                               class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                               placeholder="field_name_for_api">
+                                        <p class="text-xs text-gray-500 mt-1">Used internally for data processing. Leave blank to auto-generate.</p>
+                                    </div>
+                                    
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Field Type *</label>
+                                        <select name="field_type" required onchange="updateFieldTypeOptions(this.value)"
+                                                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                            <option value="text" ${field.field_type === 'text' ? 'selected' : ''}>Text Input</option>
+                                            <option value="textarea" ${field.field_type === 'textarea' ? 'selected' : ''}>Long Text (Textarea)</option>
+                                            <option value="email" ${field.field_type === 'email' ? 'selected' : ''}>Email</option>
+                                            <option value="url" ${field.field_type === 'url' ? 'selected' : ''}>URL</option>
+                                            <option value="number" ${field.field_type === 'number' ? 'selected' : ''}>Number</option>
+                                            <option value="select" ${field.field_type === 'select' ? 'selected' : ''}>Dropdown Select</option>
+                                            <option value="radio" ${field.field_type === 'radio' ? 'selected' : ''}>Radio Buttons</option>
+                                            <option value="checkbox" ${field.field_type === 'checkbox' ? 'selected' : ''}>Checkboxes</option>
+                                            <option value="file" ${field.field_type === 'file' ? 'selected' : ''}>File Upload</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Placeholder Text</label>
+                                        <input type="text" name="placeholder" value="${field.placeholder || ''}"
+                                               class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                               placeholder="Example: Enter your story theme...">
+                                    </div>
+                                    
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Description / Help Text</label>
+                                        <textarea name="description" rows="3"
+                                                  class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                  placeholder="Additional information to help users fill this field">${field.description || ''}</textarea>
+                                    </div>
+                                    
+                                    <div class="flex items-center space-x-6">
+                                        <label class="flex items-center">
+                                            <input type="checkbox" name="required" ${field.required ? 'checked' : ''} class="mr-2">
+                                            <span class="text-sm text-gray-700">Required Field</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <!-- Right Column: Options & Preview -->
+                                <div class="space-y-6">
+                                    <h4 class="text-lg font-medium text-gray-900 border-b pb-2">Options & Preview</h4>
+                                    
+                                    <!-- Field Options (for select, radio, checkbox) -->
+                                    <div id="field-options-section" class="${['select', 'radio', 'checkbox'].includes(field.field_type) ? '' : 'hidden'}">
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Options</label>
+                                        <div id="field-options-list" class="space-y-2 mb-3">
+                                            ${choices.map((choice, index) => `
+                                                <div class="flex items-center space-x-2 option-item">
+                                                    <input type="text" name="option_value_${index}" value="${choice.choice_value}"
+                                                           class="flex-1 p-2 border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                                                           placeholder="Value">
+                                                    <input type="text" name="option_label_${index}" value="${choice.choice_label}"
+                                                           class="flex-1 p-2 border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                                                           placeholder="Label">
+                                                    <button type="button" onclick="removeOption(this)" class="text-red-600 hover:text-red-800 p-1">
+                                                        <i class="fas fa-trash text-sm"></i>
+                                                    </button>
+                                                </div>
+                                            `).join('')}
+                                        </div>
+                                        <button type="button" onclick="addOption()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm">
+                                            <i class="fas fa-plus mr-1"></i> Add Option
+                                        </button>
+                                    </div>
+                                    
+                                    <!-- Field Preview -->
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Live Preview</label>
+                                        <div id="field-preview" class="p-4 bg-gray-50 rounded-lg border">
+                                            ${generateFieldPreview(field)}
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Validation Settings -->
+                                    <div class="bg-gray-50 rounded-lg p-4">
+                                        <h5 class="font-medium text-gray-900 mb-3">Validation Settings</h5>
+                                        <div class="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 mb-1">Min Length</label>
+                                                <input type="number" name="min_length" min="0"
+                                                       class="w-full p-2 border border-gray-300 rounded focus:ring-1 focus:ring-blue-500">
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 mb-1">Max Length</label>
+                                                <input type="number" name="max_length" min="1"
+                                                       class="w-full p-2 border border-gray-300 rounded focus:ring-1 focus:ring-blue-500">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="flex justify-end space-x-4 pt-6 border-t">
+                                <button type="button" onclick="closeFieldEditModal()" class="bg-gray-300 text-gray-700 px-6 py-2 rounded hover:bg-gray-400">
+                                    Cancel
+                                </button>
+                                <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">
+                                    ${isNew ? 'Add Field' : 'Update Field'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            `;
+            
+            // Remove existing modal
+            const existingModal = document.getElementById('field-edit-modal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+            
+            // Add modal to DOM
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
+            
+            // Add form submit handler
+            document.getElementById('field-edit-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                saveField(field, isNew);
+            });
+            
+            fieldEditModal = document.getElementById('field-edit-modal');
+        }
+
+        function updateFieldTypeOptions(fieldType) {
+            const optionsSection = document.getElementById('field-options-section');
+            if (['select', 'radio', 'checkbox'].includes(fieldType)) {
+                optionsSection.classList.remove('hidden');
+            } else {
+                optionsSection.classList.add('hidden');
+            }
+            updateFieldPreview();
+        }
+
+        function addOption() {
+            const container = document.getElementById('field-options-list');
+            const optionCount = container.children.length;
+            const optionHTML = `
+                <div class="flex items-center space-x-2 option-item">
+                    <input type="text" name="option_value_${optionCount}" 
+                           class="flex-1 p-2 border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                           placeholder="Value">
+                    <input type="text" name="option_label_${optionCount}" 
+                           class="flex-1 p-2 border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                           placeholder="Label">
+                    <button type="button" onclick="removeOption(this)" class="text-red-600 hover:text-red-800 p-1">
+                        <i class="fas fa-trash text-sm"></i>
+                    </button>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', optionHTML);
+            updateFieldPreview();
+        }
+
+        function removeOption(button) {
+            button.closest('.option-item').remove();
+            updateFieldPreview();
+        }
+
+        function updateFieldPreview() {
+            // This would update the preview in real-time
+            // Implementation depends on current form values
+        }
+
+        async function saveField(originalField, isNew) {
+            try {
+                const formData = new FormData(document.getElementById('field-edit-form'));
+                
+                // Collect options
+                const options = [];
+                const optionInputs = document.querySelectorAll('[name^="option_value_"]');
+                optionInputs.forEach((input, index) => {
+                    const valueInput = input;
+                    const labelInput = document.querySelector(`[name="option_label_${index}"]`);
+                    if (valueInput.value && labelInput.value) {
+                        options.push({
+                            value: valueInput.value,
+                            label: labelInput.value
+                        });
+                    }
+                });
+                
+                const fieldData = {
+                    name: formData.get('name') || formData.get('label').toLowerCase().replace(/\s+/g, '_'),
+                    label: formData.get('label'),
+                    field_type: formData.get('field_type'),
+                    placeholder: formData.get('placeholder'),
+                    description: formData.get('description'),
+                    required: formData.get('required') === 'on',
+                    field_options: options,
+                    validation: {
+                        min_length: formData.get('min_length') ? parseInt(formData.get('min_length')) : null,
+                        max_length: formData.get('max_length') ? parseInt(formData.get('max_length')) : null
+                    }
+                };
+                
+                let response;
+                if (isNew) {
+                    response = await PMConfig.fetch(`api/v6/projects/${currentProject.id}/steps/${currentStep.id}/fields`, {
+                        method: 'POST',
+                        body: JSON.stringify(fieldData)
+                    });
+                } else {
+                    response = await PMConfig.fetch(`api/v6/projects/${currentProject.id}/fields/${originalField.id}`, {
+                        method: 'PUT',
+                        body: JSON.stringify(fieldData)
+                    });
+                }
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showToast(isNew ? 'Field added successfully' : 'Field updated successfully', 'success');
+                    closeFieldEditModal();
+                    
+                    // Reload current project to get updated data
+                    await openProjectEditor(currentProject.id);
+                } else {
+                    showToast(data.error || 'Failed to save field', 'error');
+                }
+            } catch (error) {
+                console.error('Error saving field:', error);
+                showToast('Failed to save field', 'error');
+            }
+        }
+
+        function closeFieldEditModal() {
+            if (fieldEditModal) {
+                fieldEditModal.remove();
+                fieldEditModal = null;
+            }
+        }
+
+        async function deleteField(fieldId) {
+            if (!confirm('Are you sure you want to delete this field? This action cannot be undone.')) {
+                return;
+            }
+            
+            try {
+                const response = await PMConfig.fetch(`api/v6/projects/${currentProject.id}/fields/${fieldId}`, {
+                    method: 'DELETE'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showToast('Field deleted successfully', 'success');
+                    await openProjectEditor(currentProject.id);
+                } else {
+                    showToast(data.error || 'Failed to delete field', 'error');
+                }
+            } catch (error) {
+                console.error('Error deleting field:', error);
+                showToast('Failed to delete field', 'error');
+            }
+        }
+
+        async function duplicateField(fieldId) {
+            const field = currentFields.find(f => f.id === fieldId);
+            if (!field) return;
+            
+            const duplicateField = {
+                ...field,
+                id: null,
+                label: field.label + ' (Copy)',
+                name: field.name + '_copy'
+            };
+            
+            showFieldEditModal(duplicateField, true);
+        }
+
+        // Drag and drop functionality
+        function initializeDragAndDrop() {
+            const container = document.getElementById('fields-container');
+            if (!container) return;
+            
+            // This would implement drag and drop using a library like Sortable.js
+            // For now, just adding the structure
+        }
+
+        // Toast notification system
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 ${
+                type === 'success' ? 'bg-green-500 text-white' :
+                type === 'error' ? 'bg-red-500 text-white' :
+                'bg-blue-500 text-white'
+            }`;
+            toast.textContent = message;
+            
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 5000);
+        }
+
+        // Event handlers - these are handled by the PromptEngineerV6_1_0rc class
+
+        document.getElementById('back-to-projects')?.addEventListener('click', () => {
+            document.getElementById('project-editor-view').classList.add('hidden');
+            document.getElementById('project-list-view').classList.remove('hidden');
+            currentProject = null;
+            currentStep = null;
+        });
+
+        // Package and Advertisement Control Functions
+        async function loadAvailablePackages() {
+            try {
+                const response = await PMConfig.fetch('api/admin/packages/all', {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('authToken') || 'dummy-token'}`
+                    }
+                });
+                const data = await response.json();
+                
+                if (data.success && data.packages) {
+                    const packageSelect = document.getElementById('settings-required-package');
+                    packageSelect.innerHTML = '<option value="">Select a package...</option>';
+                    data.packages.forEach(pkg => {
+                        const option = document.createElement('option');
+                        option.value = pkg.id;
+                        option.textContent = `${pkg.display_name} ($${pkg.price})`;
+                        packageSelect.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading packages:', error);
+                showToast('Failed to load available packages', 'error');
+            }
+        }
+
+        function setupAccessControlHandlers() {
+            const accessLevelSelect = document.getElementById('settings-access-level');
+            const packageContainer = document.getElementById('package-selection-container');
+            
+            accessLevelSelect?.addEventListener('change', function() {
+                if (this.value === 'package') {
+                    packageContainer.classList.remove('hidden');
+                    loadAvailablePackages();
+                } else {
+                    packageContainer.classList.add('hidden');
+                }
+            });
+        }
+
+        function setupAdvertisementHandlers() {
+            const adsEnabled = document.getElementById('settings-ads-enabled');
+            const adConfiguration = document.getElementById('ad-configuration');
+            
+            adsEnabled?.addEventListener('change', function() {
+                if (this.checked) {
+                    adConfiguration.classList.remove('hidden');
+                } else {
+                    adConfiguration.classList.add('hidden');
+                }
+            });
+        }
+
+        function populateProjectSettings(project) {
+            // Populate existing fields
+            document.getElementById('settings-project-name').value = project.name || '';
+            document.getElementById('settings-ai-role').value = project.ai_role || '';
+            document.getElementById('settings-project-description').value = project.description || '';
+            document.getElementById('settings-header-title').value = project.header_title || '';
+            document.getElementById('settings-header-subtitle').value = project.header_subtitle || '';
+            
+            // Populate access control settings
+            const accessLevel = project.access_level || 'public';
+            document.getElementById('settings-access-level').value = accessLevel;
+            
+            if (accessLevel === 'package') {
+                document.getElementById('package-selection-container').classList.remove('hidden');
+                loadAvailablePackages().then(() => {
+                    if (project.required_package_id) {
+                        document.getElementById('settings-required-package').value = project.required_package_id;
+                    }
+                });
+            }
+            
+            // Populate advertisement settings - check if advertising is enabled
+            loadProjectAdvertisement(project.id);
+        }
+
+        async function loadProjectAdvertisement(projectId) {
+            try {
+                const response = await PMConfig.fetch('api/admin/advertising/all', {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('authToken') || 'dummy-token'}`
+                    }
+                });
+                const data = await response.json();
+                
+                if (data.success && data.tools) {
+                    const projectAd = data.tools.find(tool => tool.id === projectId);
+                    if (projectAd && projectAd.ad_enabled) {
+                        // Enable advertisements
+                        document.getElementById('settings-ads-enabled').checked = true;
+                        document.getElementById('ad-configuration').classList.remove('hidden');
+                        
+                        // Populate ad settings
+                        document.getElementById('settings-google-client-id').value = projectAd.google_ads_client_id || '';
+                        document.getElementById('settings-google-slot-id').value = projectAd.google_ads_slot_id || '';
+                        document.getElementById('settings-header-ads').checked = projectAd.show_header_ad || false;
+                        document.getElementById('settings-footer-ads').checked = projectAd.show_footer_ad || false;
+                        document.getElementById('settings-sidebar-ads').checked = projectAd.show_sidebar_ad || false;
+                        document.getElementById('settings-revenue-share').checked = projectAd.revenue_share_enabled || false;
+                        document.getElementById('settings-platform-percentage').value = projectAd.platform_revenue_percentage || 10.0;
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading project advertisement:', error);
+            }
+        }
+
+        async function saveProjectSettings(projectId) {
+            try {
+                // Collect project settings data
+                const projectData = {
+                    name: document.getElementById('settings-project-name').value,
+                    ai_role: document.getElementById('settings-ai-role').value,
+                    description: document.getElementById('settings-project-description').value,
+                    header_title: document.getElementById('settings-header-title').value,
+                    header_subtitle: document.getElementById('settings-header-subtitle').value,
+                    access_level: document.getElementById('settings-access-level').value,
+                    required_package_id: document.getElementById('settings-access-level').value === 'package' 
+                        ? document.getElementById('settings-required-package').value || null 
+                        : null
+                };
+
+                // Save project settings
+                const projectResponse = await PMConfig.fetch(`api/v6/projects/${projectId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('authToken') || 'dummy-token'}`
+                    },
+                    body: JSON.stringify(projectData)
+                });
+
+                if (!projectResponse.ok) {
+                    throw new Error('Failed to save project settings');
+                }
+
+                // Save advertisement settings if enabled
+                const adsEnabled = document.getElementById('settings-ads-enabled').checked;
+                if (adsEnabled) {
+                    const adSettings = {
+                        enabled: true,
+                        google_ads_client_id: document.getElementById('settings-google-client-id').value,
+                        google_ads_slot_id: document.getElementById('settings-google-slot-id').value,
+                        show_header_ad: document.getElementById('settings-header-ads').checked,
+                        show_footer_ad: document.getElementById('settings-footer-ads').checked,
+                        show_sidebar_ad: document.getElementById('settings-sidebar-ads').checked,
+                        revenue_share_enabled: document.getElementById('settings-revenue-share').checked,
+                        platform_revenue_percentage: parseFloat(document.getElementById('settings-platform-percentage').value || 10.0)
+                    };
+
+                    const adResponse = await PMConfig.fetch('api/admin/advertising/configure', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${localStorage.getItem('authToken') || 'dummy-token'}`
+                        },
+                        body: JSON.stringify({
+                            toolId: projectId,
+                            adSettings: adSettings
+                        })
+                    });
+
+                    if (!adResponse.ok) {
+                        console.warn('Failed to save advertisement settings');
+                    }
+                }
+
+                showToast('Project settings saved successfully!', 'success');
+                document.getElementById('project-settings-modal').classList.add('hidden');
+                
+                // Reload project data
+                if (currentProject && currentProject.id === projectId) {
+                    const updatedProject = await PMConfig.fetch(`api/v6/projects/${projectId}`);
+                    const data = await updatedProject.json();
+                    if (data.success) {
+                        currentProject = data.project;
+                    }
+                }
+                
+            } catch (error) {
+                console.error('Error saving project settings:', error);
+                showToast('Failed to save project settings', 'error');
+            }
+        }
+
+        // Listen for messages from parent frame (admin panel)
+        window.addEventListener('message', function(event) {
+            if (event.data.type === 'LOAD_PROJECT' && event.data.projectId) {
+                console.log('Loading project from admin panel:', event.data.projectId);
+                loadProjectFromAdmin(event.data.projectId);
+            }
+        });
+
+        // Load project from admin panel message
+        async function loadProjectFromAdmin(projectId) {
+            try {
+                // Load the specific project
+                const response = await PMConfig.fetch(`api/v6/projects/${projectId}`);
+                const data = await response.json();
+                
+                if (data.success && data.project) {
+                    // Show project editor view
+                    document.getElementById('project-list-view').classList.add('hidden');
+                    document.getElementById('project-editor-view').classList.remove('hidden');
+                    
+                    // Set current project
+                    currentProject = data.project;
+                    
+                    // Update project header
+                    document.getElementById('project-title').textContent = data.project.name;
+                    document.getElementById('project-description').textContent = data.project.description || 'No description';
+                    
+                    // Load project steps
+                    await openProjectEditor(projectId);
+                } else {
+                    showToast('Failed to load project: ' + (data.error || 'Project not found'), 'error');
+                }
+            } catch (error) {
+                console.error('Error loading project from admin:', error);
+                showToast('Failed to load project', 'error');
+            }
+        }
+
+        // Initialize navigation and check auth
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check authentication first
+            if (!checkAuthentication()) {
+                return; // Stop execution if not authenticated
+            }
+            
+            const navManager = new NavigationManager();
+            // Refresh authentication state before generating navigation
+            navManager.isAuthenticated = navManager.checkAuthentication();
+            navManager.userEmail = navManager.getUserEmail();
+            document.body.insertAdjacentHTML('afterbegin', navManager.getNavigationHTML());
+            navManager.injectNavigationFunctions();
+            
+            // Load projects
+            loadProjects();
+            
+            // Check for URL parameters (e.g., ?edit=projectId)
+            const urlParams = new URLSearchParams(window.location.search);
+            const editProjectId = urlParams.get('edit');
+            if (editProjectId) {
+                // Delay the project loading to ensure projects are loaded first
+                setTimeout(() => {
+                    loadProjectFromAdmin(editProjectId);
+                }, 1000);
+            }
+            
+            // Initialize new control handlers
+            setupAccessControlHandlers();
+            setupAdvertisementHandlers();
+            
+            // Project settings modal handlers
+            document.getElementById('project-settings')?.addEventListener('click', () => {
+                if (currentProject) {
+                    populateProjectSettings(currentProject);
+                    document.getElementById('project-settings-modal').classList.remove('hidden');
+                } else {
+                    showToast('Please select a project first', 'warning');
+                }
+            });
+            
+            document.getElementById('close-settings')?.addEventListener('click', () => {
+                document.getElementById('project-settings-modal').classList.add('hidden');
+            });
+            
+            document.getElementById('cancel-settings')?.addEventListener('click', () => {
+                document.getElementById('project-settings-modal').classList.add('hidden');
+            });
+            
+            document.getElementById('project-settings-form')?.addEventListener('submit', (e) => {
+                e.preventDefault();
+                if (currentProject) {
+                    saveProjectSettings(currentProject.id);
+                }
+            });
+        });
+    </script>
 </body>
 </html>

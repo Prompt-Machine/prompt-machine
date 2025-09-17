@@ -1,9 +1,9 @@
 /**
- * Prompt Engineer V6 - Multi-Step Project Builder
+ * Prompt Engineer v6.1.0rc - Multi-Step Project Builder
  * Complete admin interface for creating and managing projects
  */
 
-class PromptEngineerV6 {
+class PromptEngineerV6_1_0rc {
     constructor() {
         this.currentProject = null;
         this.currentStep = null;
@@ -49,6 +49,18 @@ class PromptEngineerV6 {
         document.getElementById('create-fields')?.addEventListener('click', () => this.createFields());
         document.getElementById('add-custom-field')?.addEventListener('click', () => this.addCustomField());
         document.getElementById('finalize-project')?.addEventListener('click', () => this.finalizeProject());
+        
+        // Field Editor Modal Events
+        document.getElementById('close-field-editor')?.addEventListener('click', () => this.closeFieldEditor());
+        document.getElementById('cancel-field-edit')?.addEventListener('click', () => this.closeFieldEditor());
+        document.getElementById('field-editor-form')?.addEventListener('submit', (e) => this.saveFieldChanges(e));
+        document.getElementById('field-type')?.addEventListener('change', (e) => this.updateFieldTypeUI(e.target.value));
+        document.getElementById('add-field-option')?.addEventListener('click', () => this.addFieldOption());
+        
+        // Live preview updates
+        ['field-label', 'field-type', 'field-description', 'field-placeholder', 'field-required'].forEach(id => {
+            document.getElementById(id)?.addEventListener('input', () => this.updateFieldPreview());
+        });
 
         // Navigation
         document.getElementById('back-to-projects')?.addEventListener('click', () => this.showProjectListView());
@@ -156,6 +168,11 @@ class PromptEngineerV6 {
                             class="text-gray-600 hover:text-gray-800 text-sm">
                         <i class="fas fa-copy mr-1"></i>
                         Clone
+                    </button>
+                    <button onclick="event.stopPropagation(); promptEngineer.recreateProject('${project.id}')" 
+                            class="text-blue-600 hover:text-blue-800 text-sm">
+                        <i class="fas fa-refresh mr-1"></i>
+                        Recreate
                     </button>
                     <button onclick="event.stopPropagation(); promptEngineer.exportProject('${project.id}')" 
                             class="text-gray-600 hover:text-gray-800 text-sm">
@@ -474,7 +491,15 @@ class PromptEngineerV6 {
                 <h4 class="font-semibold text-gray-900 mb-3">${step.name}</h4>
                 <div class="space-y-3">
                     ${step.fields.map((field, fieldIndex) => `
-                        <div class="bg-gray-50 rounded p-3 flex justify-between items-start">
+                        <div class="bg-gray-50 rounded p-3 flex items-start space-x-3 field-item" draggable="true" 
+                             data-step-index="${stepIndex}" data-field-index="${fieldIndex}"
+                             ondragstart="promptEngineer.handleFieldDragStart(event)"
+                             ondragover="promptEngineer.handleFieldDragOver(event)"
+                             ondrop="promptEngineer.handleFieldDrop(event)"
+                             ondragend="promptEngineer.handleFieldDragEnd(event)">
+                            <div class="drag-handle cursor-move text-gray-400 hover:text-gray-600 mt-1" title="Drag to reorder">
+                                <i class="fas fa-grip-vertical"></i>
+                            </div>
                             <div class="flex-1">
                                 <div class="font-medium">${field.label}</div>
                                 <div class="text-sm text-gray-600">${field.type} ${field.required ? '(required)' : '(optional)'}</div>
@@ -537,13 +562,42 @@ class PromptEngineerV6 {
     }
 
     addCustomField() {
-        // TODO: Open field editor to add custom field
-        this.showError('Custom field creation coming soon!');
+        // Set up for adding a new field
+        this.editingField = {
+            stepIndex: 0, // Default to first step, user can move it later
+            fieldIndex: -1, // -1 indicates new field
+            field: {
+                label: '',
+                type: 'text',
+                required: false,
+                placeholder: ''
+            }
+        };
+        
+        // Clear and show the field editor modal
+        this.clearFieldEditor();
+        this.populateFieldEditor(this.editingField.field);
+        
+        // Change modal title for adding
+        document.querySelector('#field-editor-modal h3').textContent = 'Add New Field';
+        
+        // Show the field editor modal
+        document.getElementById('field-editor-modal').classList.remove('hidden');
     }
 
     editField(stepIndex, fieldIndex) {
-        // TODO: Open field editor to edit field
-        this.showError('Field editing coming soon!');
+        // Store the field being edited
+        this.editingField = {
+            stepIndex: stepIndex,
+            fieldIndex: fieldIndex,
+            field: {...this.creationData.generatedSteps[stepIndex].fields[fieldIndex]}
+        };
+        
+        // Populate the field editor modal with current values
+        this.populateFieldEditor(this.editingField.field);
+        
+        // Show the field editor modal
+        document.getElementById('field-editor-modal').classList.remove('hidden');
     }
 
     removeField(stepIndex, fieldIndex) {
@@ -636,6 +690,40 @@ class PromptEngineerV6 {
         } catch (error) {
             console.error('Error deleting project:', error);
             this.showError('Failed to delete project');
+        } finally {
+            this.hideLoading();
+        }
+    }
+
+    async recreateProject(projectId) {
+        if (!confirm('This will create a new project with the same basic information but reset to step 1 of the workflow. You can then go through the newest Prompt Engineer process from the beginning. Continue?')) {
+            return;
+        }
+
+        try {
+            this.showLoading('Recreating project...');
+
+            const response = await PMConfig.fetch(`api/v6/projects/${projectId}/recreate`, {
+                method: 'POST',
+                body: JSON.stringify({})
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                this.loadProjects();
+                this.showSuccess(`Project recreated successfully! New project: "${data.project.name}"\n\nThe new project is ready for you to go through the step 1-3 workflow with the newest Prompt Engineer logic.`);
+                
+                // Ask if user wants to edit the recreated project
+                if (confirm('Would you like to start editing the recreated project now?')) {
+                    this.editProject(data.project.id);
+                }
+            } else {
+                this.showError(data.error || 'Failed to recreate project');
+            }
+        } catch (error) {
+            console.error('Error recreating project:', error);
+            this.showError('Failed to recreate project');
         } finally {
             this.hideLoading();
         }
@@ -790,8 +878,11 @@ class PromptEngineerV6 {
                             </button>
                         </div>
                     ` : fields.map((field, index) => `
-                        <div class="field-card bg-white border rounded-lg p-4">
+                        <div class="field-card bg-white border rounded-lg p-4 field-item field-drop-zone" draggable="true" data-field-id="${field.id}">
                             <div class="flex justify-between items-start">
+                                <div class="drag-handle mr-3 text-gray-400 cursor-move hover:text-gray-600 flex-shrink-0 py-1">
+                                    <i class="fas fa-grip-vertical"></i>
+                                </div>
                                 <div class="flex-1">
                                     <div class="flex items-center space-x-2 mb-2">
                                         <span class="font-medium">${this.escapeHtml(field.label)}</span>
@@ -816,11 +907,15 @@ class PromptEngineerV6 {
                                         <i class="fas fa-chevron-down"></i>
                                     </button>
                                     <button onclick="promptEngineer.editField('${field.id}')" 
-                                            class="text-blue-400 hover:text-blue-600 p-1">
+                                            class="text-blue-400 hover:text-blue-600 p-1" title="Edit Field">
                                         <i class="fas fa-edit"></i>
                                     </button>
+                                    <button onclick="promptEngineer.duplicateField('${field.id}')" 
+                                            class="text-green-400 hover:text-green-600 p-1" title="Duplicate Field">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
                                     <button onclick="promptEngineer.deleteField('${field.id}')" 
-                                            class="text-red-400 hover:text-red-600 p-1">
+                                            class="text-red-400 hover:text-red-600 p-1" title="Delete Field">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </div>
@@ -941,7 +1036,7 @@ class PromptEngineerV6 {
             
             if (this.currentEditingField) {
                 // Update existing field
-                response = await PMConfig.fetch(`api/v6/fields/${this.currentEditingField.id}`, {
+                response = await PMConfig.fetch(`api/v6/projects/${this.currentProject.id}/fields/${this.currentEditingField.id}`, {
                     method: 'PUT',
                     body: JSON.stringify({
                         name: name,
@@ -949,12 +1044,12 @@ class PromptEngineerV6 {
                         field_type: field_type,
                         placeholder: placeholder,
                         description: description,
-                        is_required: is_required
+                        required: is_required
                     })
                 });
             } else {
                 // Create new field
-                response = await PMConfig.fetch(`api/v6/steps/${this.currentFieldStepId}/fields`, {
+                response = await PMConfig.fetch(`api/v6/projects/${this.currentProject.id}/steps/${this.currentFieldStepId}/fields`, {
                     method: 'POST',
                     body: JSON.stringify({
                         name: name,
@@ -962,7 +1057,7 @@ class PromptEngineerV6 {
                         field_type: field_type,
                         placeholder: placeholder,
                         description: description,
-                        is_required: is_required
+                        required: is_required
                     })
                 });
             }
@@ -1013,7 +1108,7 @@ class PromptEngineerV6 {
         }
         
         try {
-            const response = await PMConfig.fetch(`api/v6/fields/${fieldId}`, {
+            const response = await PMConfig.fetch(`api/v6/projects/${this.currentProject.id}/fields/${fieldId}`, {
                 method: 'DELETE'
             });
             
@@ -1022,12 +1117,125 @@ class PromptEngineerV6 {
             if (data.success) {
                 // Reload project to get updated fields
                 this.editProject(this.currentProject.id);
+                this.showSuccess('Field deleted successfully');
             } else {
                 this.showError(data.error || 'Failed to delete field');
             }
         } catch (error) {
             console.error('Error deleting field:', error);
             this.showError('Failed to delete field');
+        }
+    }
+
+    async duplicateField(fieldId) {
+        try {
+            // Find the field to duplicate
+            const field = this.currentStep.fields.find(f => f.id === fieldId);
+            if (!field) {
+                this.showError('Field not found');
+                return;
+            }
+
+            // Create duplicate with modified name/label
+            const duplicateData = {
+                name: (field.name || field.label.toLowerCase().replace(/\s+/g, '_')) + '_copy',
+                label: field.label + ' (Copy)',
+                field_type: field.field_type,
+                placeholder: field.placeholder,
+                description: field.description,
+                required: field.is_required || field.required
+            };
+
+            this.showLoading('Duplicating field...');
+
+            const response = await PMConfig.fetch(`api/v6/projects/${this.currentProject.id}/steps/${this.currentStep.id}/fields`, {
+                method: 'POST',
+                body: JSON.stringify(duplicateData)
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                // If original field had choices, duplicate them too
+                if (field.choices && field.choices.length > 0) {
+                    for (const choice of field.choices) {
+                        await PMConfig.fetch(`api/v6/fields/${data.field.id}/choices`, {
+                            method: 'POST',
+                            body: JSON.stringify({
+                                label: choice.choice_label || choice.label,
+                                value: choice.choice_value || choice.value,
+                                is_default: choice.is_default || false
+                            })
+                        });
+                    }
+                }
+
+                // Reload project to show new field
+                this.editProject(this.currentProject.id);
+                this.showSuccess('Field duplicated successfully');
+            } else {
+                this.showError(data.error || 'Failed to duplicate field');
+            }
+        } catch (error) {
+            console.error('Error duplicating field:', error);
+            this.showError('Failed to duplicate field');
+        } finally {
+            this.hideLoading();
+        }
+    }
+
+    async moveField(fieldId, direction) {
+        try {
+            if (!this.currentStep || !this.currentStep.fields) return;
+
+            const fields = this.currentStep.fields;
+            const fieldIndex = fields.findIndex(f => f.id === fieldId);
+            
+            if (fieldIndex === -1) return;
+
+            let newIndex;
+            if (direction === 'up') {
+                if (fieldIndex === 0) return; // Already at top
+                newIndex = fieldIndex - 1;
+            } else if (direction === 'down') {
+                if (fieldIndex === fields.length - 1) return; // Already at bottom
+                newIndex = fieldIndex + 1;
+            } else {
+                return;
+            }
+
+            // Create the new order array
+            const reorderedFields = [...fields];
+            const [movedField] = reorderedFields.splice(fieldIndex, 1);
+            reorderedFields.splice(newIndex, 0, movedField);
+
+            // Update field_order for all fields
+            const reorderData = reorderedFields.map((field, index) => ({
+                id: field.id,
+                field_order: index + 1
+            }));
+
+            this.showLoading('Reordering fields...');
+
+            const response = await PMConfig.fetch(`api/v6/projects/${this.currentProject.id}/fields/reorder`, {
+                method: 'PUT',
+                body: JSON.stringify({ fields: reorderData })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                // Reload project to show new order
+                this.editProject(this.currentProject.id);
+                this.showSuccess('Field order updated');
+            } else {
+                this.showError(data.error || 'Failed to reorder fields');
+            }
+        } catch (error) {
+            console.error('Error reordering fields:', error);
+            this.showError('Failed to reorder fields');
+        } finally {
+            this.hideLoading();
         }
     }
 
@@ -1290,10 +1498,358 @@ class PromptEngineerV6 {
             this.hideLoading();
         }
     }
+
+    // ================================
+    // FIELD EDITOR FUNCTIONALITY
+    // ================================
+
+    populateFieldEditor(field) {
+        // Basic field information
+        document.getElementById('field-label').value = field.label || '';
+        document.getElementById('field-type').value = field.type || 'text';
+        document.getElementById('field-description').value = field.description || '';
+        document.getElementById('field-placeholder').value = field.placeholder || '';
+        
+        // Field settings
+        document.getElementById('field-required').checked = field.required || false;
+        document.getElementById('field-multiple').checked = field.multiple || false;
+        document.getElementById('field-disabled').checked = field.disabled || false;
+        
+        // Validation settings
+        document.getElementById('field-min-length').value = field.minLength || '';
+        document.getElementById('field-max-length').value = field.maxLength || '';
+        document.getElementById('field-pattern').value = field.pattern || '';
+        
+        // Handle field options (for select, radio, checkbox)
+        this.populateFieldOptions(field.options || []);
+        this.updateFieldTypeUI(field.type || 'text');
+        this.updateFieldPreview();
+    }
+
+    populateFieldOptions(options) {
+        const container = document.getElementById('field-options-list');
+        container.innerHTML = '';
+        
+        options.forEach((option, index) => {
+            this.addFieldOptionElement(option, index);
+        });
+        
+        if (options.length === 0) {
+            this.addFieldOptionElement('', 0);
+        }
+    }
+
+    updateFieldTypeUI(fieldType) {
+        const optionsContainer = document.getElementById('field-options-container');
+        const multipleCheckbox = document.getElementById('field-multiple').parentElement;
+        
+        // Show/hide options container based on field type
+        if (['select', 'radio', 'checkbox'].includes(fieldType)) {
+            optionsContainer.classList.remove('hidden');
+        } else {
+            optionsContainer.classList.add('hidden');
+        }
+        
+        // Show/hide multiple values option
+        if (['select', 'checkbox', 'file'].includes(fieldType)) {
+            multipleCheckbox.classList.remove('hidden');
+        } else {
+            multipleCheckbox.classList.add('hidden');
+            document.getElementById('field-multiple').checked = false;
+        }
+        
+        this.updateFieldPreview();
+    }
+
+    addFieldOption() {
+        const container = document.getElementById('field-options-list');
+        const index = container.children.length;
+        this.addFieldOptionElement('', index);
+        this.updateFieldPreview();
+    }
+
+    addFieldOptionElement(value, index) {
+        const container = document.getElementById('field-options-list');
+        const optionDiv = document.createElement('div');
+        optionDiv.className = 'flex items-center space-x-2';
+        optionDiv.innerHTML = `
+            <input type="text" 
+                   class="flex-1 p-2 border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 field-option-input" 
+                   value="${value}" 
+                   placeholder="Option ${index + 1}"
+                   data-index="${index}">
+            <button type="button" 
+                    onclick="this.parentElement.remove(); promptEngineer.updateFieldPreview();" 
+                    class="text-red-600 hover:text-red-800 px-2">
+                <i class="fas fa-trash"></i>
+            </button>
+        `;
+        container.appendChild(optionDiv);
+        
+        // Add event listener for live preview
+        const input = optionDiv.querySelector('.field-option-input');
+        input.addEventListener('input', () => this.updateFieldPreview());
+    }
+
+    updateFieldPreview() {
+        const preview = document.getElementById('field-preview');
+        const label = document.getElementById('field-label').value || 'Field Label';
+        const type = document.getElementById('field-type').value;
+        const description = document.getElementById('field-description').value;
+        const placeholder = document.getElementById('field-placeholder').value;
+        const required = document.getElementById('field-required').checked;
+        const multiple = document.getElementById('field-multiple').checked;
+        const disabled = document.getElementById('field-disabled').checked;
+        
+        // Get options for select/radio/checkbox
+        const optionInputs = document.querySelectorAll('.field-option-input');
+        const options = Array.from(optionInputs).map(input => input.value).filter(val => val.trim());
+        
+        let previewHTML = `
+            <label class="block text-sm font-medium text-gray-700 mb-1">
+                ${label}${required ? ' *' : ''}
+            </label>
+        `;
+        
+        if (description) {
+            previewHTML += `<p class="text-xs text-gray-600 mb-2">${description}</p>`;
+        }
+        
+        // Generate preview based on field type
+        switch (type) {
+            case 'textarea':
+                previewHTML += `<textarea class="w-full p-2 border border-gray-300 rounded focus:ring-1 focus:ring-blue-500" 
+                                         placeholder="${placeholder}" ${disabled ? 'disabled' : ''}></textarea>`;
+                break;
+            case 'select':
+                previewHTML += `<select class="w-full p-2 border border-gray-300 rounded focus:ring-1 focus:ring-blue-500" 
+                                       ${multiple ? 'multiple' : ''} ${disabled ? 'disabled' : ''}>
+                    ${placeholder ? `<option value="">${placeholder}</option>` : ''}
+                    ${options.map(opt => `<option value="${opt}">${opt}</option>`).join('')}
+                </select>`;
+                break;
+            case 'radio':
+                previewHTML += options.map(opt => `
+                    <div class="flex items-center">
+                        <input type="radio" name="preview-radio" value="${opt}" class="mr-2" ${disabled ? 'disabled' : ''}>
+                        <label class="text-sm">${opt}</label>
+                    </div>
+                `).join('');
+                break;
+            case 'checkbox':
+                if (multiple) {
+                    previewHTML += options.map(opt => `
+                        <div class="flex items-center">
+                            <input type="checkbox" value="${opt}" class="mr-2" ${disabled ? 'disabled' : ''}>
+                            <label class="text-sm">${opt}</label>
+                        </div>
+                    `).join('');
+                } else {
+                    previewHTML += `
+                        <div class="flex items-center">
+                            <input type="checkbox" class="mr-2" ${disabled ? 'disabled' : ''}>
+                            <label class="text-sm">${label}</label>
+                        </div>
+                    `;
+                }
+                break;
+            case 'range':
+                previewHTML += `<input type="range" class="w-full" ${disabled ? 'disabled' : ''}>`;
+                break;
+            default:
+                previewHTML += `<input type="${type}" class="w-full p-2 border border-gray-300 rounded focus:ring-1 focus:ring-blue-500" 
+                                      placeholder="${placeholder}" ${disabled ? 'disabled' : ''}>`;
+        }
+        
+        preview.innerHTML = previewHTML;
+    }
+
+    closeFieldEditor() {
+        document.getElementById('field-editor-modal').classList.add('hidden');
+        // Reset modal title
+        document.querySelector('#field-editor-modal h3').textContent = 'Edit Field';
+        this.editingField = null;
+        this.clearFieldEditor();
+    }
+
+    clearFieldEditor() {
+        document.getElementById('field-editor-form').reset();
+        document.getElementById('field-options-list').innerHTML = '';
+        document.getElementById('field-preview').innerHTML = '';
+    }
+
+    async saveFieldChanges(e) {
+        e.preventDefault();
+        
+        if (!this.editingField) return;
+        
+        const saveBtn = document.getElementById('save-field-changes');
+        const saveText = saveBtn.querySelector('.save-text');
+        const loadingText = saveBtn.querySelector('.save-loading');
+        
+        try {
+            saveBtn.disabled = true;
+            saveText.classList.add('hidden');
+            loadingText.classList.remove('hidden');
+            
+            // Collect field data from form
+            const fieldData = this.collectFieldData();
+            
+            // Update or add the field in local data
+            if (this.editingField.fieldIndex === -1) {
+                // Adding new field
+                this.creationData.generatedSteps[this.editingField.stepIndex].fields.push(fieldData);
+            } else {
+                // Editing existing field
+                this.creationData.generatedSteps[this.editingField.stepIndex].fields[this.editingField.fieldIndex] = fieldData;
+            }
+            
+            // Refresh the display
+            this.displayGeneratedFields(null, this.creationData.generatedSteps);
+            
+            // Close the modal
+            this.closeFieldEditor();
+            
+            this.showSuccess('Field updated successfully!');
+        } catch (error) {
+            console.error('Error saving field changes:', error);
+            this.showError('Failed to save field changes');
+        } finally {
+            saveBtn.disabled = false;
+            saveText.classList.remove('hidden');
+            loadingText.classList.add('hidden');
+        }
+    }
+
+    collectFieldData() {
+        // Get options for select/radio/checkbox
+        const optionInputs = document.querySelectorAll('.field-option-input');
+        const options = Array.from(optionInputs).map(input => input.value.trim()).filter(val => val);
+        
+        const fieldData = {
+            label: document.getElementById('field-label').value.trim(),
+            type: document.getElementById('field-type').value,
+            description: document.getElementById('field-description').value.trim(),
+            placeholder: document.getElementById('field-placeholder').value.trim(),
+            required: document.getElementById('field-required').checked,
+            multiple: document.getElementById('field-multiple').checked,
+            disabled: document.getElementById('field-disabled').checked
+        };
+        
+        // Add validation settings
+        const minLength = document.getElementById('field-min-length').value;
+        const maxLength = document.getElementById('field-max-length').value;
+        const pattern = document.getElementById('field-pattern').value.trim();
+        
+        if (minLength) fieldData.minLength = parseInt(minLength);
+        if (maxLength) fieldData.maxLength = parseInt(maxLength);
+        if (pattern) fieldData.pattern = pattern;
+        
+        // Add options for select/radio/checkbox fields
+        if (['select', 'radio', 'checkbox'].includes(fieldData.type) && options.length > 0) {
+            fieldData.options = options;
+        }
+        
+        return fieldData;
+    }
+
+    // ================================
+    // DRAG AND DROP FUNCTIONALITY
+    // ================================
+
+    handleFieldDragStart(event) {
+        const fieldItem = event.target.closest('.field-item');
+        if (!fieldItem) return;
+        
+        // Store drag data
+        this.dragData = {
+            stepIndex: parseInt(fieldItem.dataset.stepIndex),
+            fieldIndex: parseInt(fieldItem.dataset.fieldIndex),
+            element: fieldItem
+        };
+        
+        // Visual feedback
+        fieldItem.style.opacity = '0.5';
+        event.dataTransfer.effectAllowed = 'move';
+        event.dataTransfer.setData('text/html', fieldItem.outerHTML);
+    }
+
+    handleFieldDragOver(event) {
+        event.preventDefault();
+        event.dataTransfer.dropEffect = 'move';
+        
+        const fieldItem = event.target.closest('.field-item');
+        if (!fieldItem || !this.dragData) return;
+        
+        // Visual feedback for drop zone
+        fieldItem.style.borderTop = '3px solid #3b82f6';
+    }
+
+    handleFieldDragEnd(event) {
+        // Clean up visual feedback
+        const fieldItems = document.querySelectorAll('.field-item');
+        fieldItems.forEach(item => {
+            item.style.opacity = '';
+            item.style.borderTop = '';
+        });
+        
+        this.dragData = null;
+    }
+
+    handleFieldDrop(event) {
+        event.preventDefault();
+        
+        const dropTarget = event.target.closest('.field-item');
+        if (!dropTarget || !this.dragData) return;
+        
+        const dropStepIndex = parseInt(dropTarget.dataset.stepIndex);
+        const dropFieldIndex = parseInt(dropTarget.dataset.fieldIndex);
+        
+        // Don't drop on itself
+        if (this.dragData.stepIndex === dropStepIndex && this.dragData.fieldIndex === dropFieldIndex) {
+            return;
+        }
+        
+        // Only allow reordering within the same step
+        if (this.dragData.stepIndex !== dropStepIndex) {
+            this.showError('Fields can only be reordered within the same step');
+            return;
+        }
+        
+        try {
+            // Perform the reorder
+            const fields = this.creationData.generatedSteps[dropStepIndex].fields;
+            const draggedField = fields[this.dragData.fieldIndex];
+            
+            // Remove dragged field from its current position
+            fields.splice(this.dragData.fieldIndex, 1);
+            
+            // Calculate new insertion index
+            let newIndex = dropFieldIndex;
+            if (this.dragData.fieldIndex < dropFieldIndex) {
+                newIndex = dropFieldIndex - 1;
+            }
+            
+            // Insert at new position
+            fields.splice(newIndex, 0, draggedField);
+            
+            // Refresh the display
+            this.displayGeneratedFields(null, this.creationData.generatedSteps);
+            
+            this.showSuccess('Field order updated successfully!');
+        } catch (error) {
+            console.error('Error reordering fields:', error);
+            this.showError('Failed to reorder fields');
+        }
+        
+        // Clean up
+        dropTarget.style.borderTop = '';
+    }
 }
 
 // Initialize the application
 let promptEngineer;
 document.addEventListener('DOMContentLoaded', () => {
-    promptEngineer = new PromptEngineerV6();
+    promptEngineer = new PromptEngineerV6_1_0rc();
+    window.promptEngineer = promptEngineer;
 });

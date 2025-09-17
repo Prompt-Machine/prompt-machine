@@ -171,6 +171,36 @@ class AIConfigService {
                     }
                 }
                 
+                // If we have a valid API key, try to get live models
+                let models = provider.defaultModels;
+                let modelsSource = 'default';
+                
+                if (hasKey && apiKey) {
+                    try {
+                        console.log(`🔍 Fetching live models for ${provider.name}...`);
+                        const testResult = await this.testApiKey(providerId, apiKey);
+                        if (testResult.success && testResult.models) {
+                            models = testResult.models;
+                            modelsSource = 'live';
+                            console.log(`✅ Got ${models.length} live models for ${provider.name}`);
+                        }
+                    } catch (error) {
+                        console.warn(`⚠️ Failed to fetch live models for ${provider.name}:`, error.message);
+                        // Fall back to database or default models
+                        if (dbConfig?.available_models) {
+                            models = typeof dbConfig.available_models === 'string' 
+                                ? JSON.parse(dbConfig.available_models) 
+                                : dbConfig.available_models;
+                            modelsSource = 'database';
+                        }
+                    }
+                } else if (dbConfig?.available_models) {
+                    models = typeof dbConfig.available_models === 'string' 
+                        ? JSON.parse(dbConfig.available_models) 
+                        : dbConfig.available_models;
+                    modelsSource = 'database';
+                }
+
                 config[providerId] = {
                     name: provider.name,
                     envKey: provider.envKey,
@@ -178,7 +208,8 @@ class AIConfigService {
                     hasKey: hasKey,
                     keyPreview: apiKey ? this.maskApiKey(apiKey) : null,
                     isActive: dbConfig?.is_active || false,
-                    models: dbConfig?.available_models || provider.defaultModels,
+                    models: models,
+                    modelsSource: modelsSource, // Track where models came from
                     selectedModel: dbConfig?.selected_model || null,
                     lastUpdated: dbConfig?.updated_at || null
                 };
@@ -272,33 +303,83 @@ class AIConfigService {
             }
 
             // Extract available models based on provider
-            let availableModels = provider.defaultModels;
+            let availableModels = [];
             
             if (providerId === 'anthropic') {
                 // For Claude, we test each model individually and return working ones
                 const workingModels = [];
-                for (const model of provider.defaultModels) {
+                const modelsToTest = [
+                    'claude-3-5-sonnet-20241022',
+                    'claude-3-5-sonnet-20240620',
+                    'claude-3-5-haiku-20241022',
+                    'claude-3-sonnet-20240229',
+                    'claude-3-haiku-20240307',
+                    'claude-3-opus-20240229'
+                ];
+                
+                console.log(`  Testing ${modelsToTest.length} Claude models...`);
+                for (const model of modelsToTest) {
                     try {
-                        await axios.post(provider.testUrl, {
+                        const testResponse = await axios.post(provider.testUrl, {
                             model: model,
                             max_tokens: 1,
-                            messages: [{ role: 'user', content: 'test' }]
-                        }, { headers, timeout: 5000 });
+                            messages: [{ role: 'user', content: 'Hi' }]
+                        }, { headers, timeout: 8000 });
+                        
                         workingModels.push(model);
+                        console.log(`    ✅ ${model} available`);
                     } catch (e) {
-                        // Model doesn't work, skip it
+                        const status = e.response?.status;
+                        if (status === 404) {
+                            console.log(`    ❌ ${model} not available (404)`);
+                        } else if (status === 400) {
+                            // Model exists but request was invalid - still count as available
+                            workingModels.push(model);
+                            console.log(`    ✅ ${model} available (400 - model exists)`);
+                        } else {
+                            console.log(`    ❌ ${model} error: ${status || 'unknown'}`);
+                        }
                     }
                 }
                 availableModels = workingModels.length > 0 ? workingModels : provider.defaultModels;
                 
             } else if (providerId === 'openai' && response.data && response.data.data) {
-                availableModels = response.data.data
-                    .filter(model => model.id.includes('gpt'))
-                    .map(model => model.id);
+                // Get actual available models from OpenAI API
+                const allModels = response.data.data;
+                const gptModels = allModels
+                    .filter(model => 
+                        model.id.startsWith('gpt-') && 
+                        !model.id.includes('instruct') // Filter out instruct models
+                    )
+                    .map(model => model.id)
+                    .sort((a, b) => {
+                        // Prioritize newer models
+                        if (a.includes('4') && !b.includes('4')) return -1;
+                        if (!a.includes('4') && b.includes('4')) return 1;
+                        return a.localeCompare(b);
+                    });
+                
+                availableModels = gptModels.length > 0 ? gptModels : provider.defaultModels;
+                console.log(`  Found ${availableModels.length} OpenAI models: ${availableModels.slice(0, 3).join(', ')}${availableModels.length > 3 ? '...' : ''}`);
+                
             } else if (providerId === 'google' && response.data && response.data.models) {
-                availableModels = response.data.models
-                    .filter(model => model.name.includes('gemini'))
-                    .map(model => model.name.replace('models/', ''));
+                // Get actual available models from Google API
+                const allModels = response.data.models;
+                const geminiModels = allModels
+                    .filter(model => 
+                        model.name.includes('gemini') && 
+                        model.supportedGenerationMethods?.includes('generateContent')
+                    )
+                    .map(model => model.name.replace('models/', ''))
+                    .sort();
+                
+                availableModels = geminiModels.length > 0 ? geminiModels : provider.defaultModels;
+                console.log(`  Found ${availableModels.length} Google models: ${availableModels.slice(0, 3).join(', ')}${availableModels.length > 3 ? '...' : ''}`);
+                
+            } else {
+                // Fallback to default models if API response parsing fails
+                availableModels = provider.defaultModels;
+                console.log(`  Using default models for ${provider.name}`);
             }
 
             console.log(`✅ ${provider.name} API key is valid`);

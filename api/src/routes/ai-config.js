@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const aiConfig = require('../services/aiConfig');
-const { authenticateToken } = require('../middleware/auth');
+const { verifyAuth } = require('../middleware/auth');
 
 // All AI config routes require authentication
-router.use(authenticateToken);
+router.use(verifyAuth);
 
 /**
  * GET /api/ai-config

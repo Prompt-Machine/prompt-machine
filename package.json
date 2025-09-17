@@ -1,4 +1,26 @@
 {
+  "name": "prompt-machine",
+  "version": "1.5.0-rc",
+  "description": "Professional AI tool builder and deployment platform",
+  "main": "api/src/index.js",
+  "scripts": {
+    "start": "pm2 start ecosystem.config.js",
+    "dev": "npm run dev --prefix api",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yourusername/prompt-machine.git"
+  },
+  "keywords": [
+    "ai",
+    "tool-builder",
+    "prompt-engineering",
+    "deployment",
+    "claude"
+  ],
+  "author": "LLnet Inc",
+  "license": "MIT",
   "dependencies": {
     "puppeteer": "^24.18.0"
   }

@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Early Access - Prompt Machine v1.5.0rc</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e'
+                        },
+                        purple: {
+                            500: '#8b5cf6',
+                            600: '#7c3aed',
+                            700: '#6d28d9'
+                        }
+                    },
+                    fontFamily: {
+                        'sans': ['Inter', 'system-ui', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        .nav-item:hover {
+            transform: translateY(-2px);
+            transition: all 0.3s ease;
+        }
+        
+        .form-container {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7));
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        @keyframes pulse-gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(-45deg, #667eea, #764ba2, #f093fb, #f5576c);
+            background-size: 400% 400%;
+            animation: pulse-gradient 15s ease infinite;
+        }
+    </style>
+</head>
+<body class="font-sans bg-gray-50">
+
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg border-b border-gray-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo -->
+                <div class="flex items-center">
+                    <a href="/" class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-magic text-white text-lg"></i>
+                        </div>
+                        <div>
+                            <h1 class="text-xl font-bold text-gray-900">Prompt Machine</h1>
+                            <p class="text-xs text-gray-500">v1.5.0rc</p>
+                        </div>
+                    </a>
+                </div>
+                
+                <!-- Desktop Navigation -->
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="/" class="nav-item text-gray-700 hover:text-blue-600 font-medium">Home</a>
+                    <a href="/tools-directory.html" class="nav-item text-gray-700 hover:text-blue-600 font-medium">Tools Directory</a>
+                    <a href="/early-access.html" class="nav-item text-blue-600 font-semibold">Early Access</a>
+                    <a href="/login.html" class="nav-item bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors">
+                        Login
+                    </a>
+                </div>
+                
+                <!-- Mobile menu button -->
+                <div class="md:hidden">
+                    <button id="mobile-menu-button" class="text-gray-700 hover:text-blue-600">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mobile Navigation -->
+        <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-gray-200">
+            <div class="px-2 pt-2 pb-3 space-y-1">
+                <a href="/" class="block px-3 py-2 text-gray-700 hover:text-blue-600 font-medium">Home</a>
+                <a href="/tools-directory.html" class="block px-3 py-2 text-gray-700 hover:text-blue-600 font-medium">Tools Directory</a>
+                <a href="/early-access.html" class="block px-3 py-2 text-blue-600 font-semibold">Early Access</a>
+                <a href="/login.html" class="block px-3 py-2 bg-blue-600 text-white rounded-lg font-medium mx-3">Login</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section with Form -->
+    <div class="gradient-bg min-h-screen flex items-center justify-center py-12">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                
+                <!-- Left Side - Content -->
+                <div class="text-white">
+                    <h1 class="text-4xl md:text-6xl font-bold mb-6">
+                        Get Early Access to
+                        <span class="block bg-gradient-to-r from-yellow-300 to-orange-300 bg-clip-text text-transparent">
+                            Premium Features
+                        </span>
+                    </h1>
+                    
+                    <p class="text-xl mb-8 text-white opacity-90">
+                        Join thousands of creators who are already building the future with AI. 
+                        Get exclusive access to premium features before they go public.
+                    </p>
+                    
+                    <!-- Features List -->
+                    <div class="space-y-4">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-6 h-6 bg-green-400 rounded-full flex items-center justify-center">
+                                <i class="fas fa-check text-white text-sm"></i>
+                            </div>
+                            <span class="text-lg">Unlimited AI tool creation</span>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <div class="w-6 h-6 bg-green-400 rounded-full flex items-center justify-center">
+                                <i class="fas fa-check text-white text-sm"></i>
+                            </div>
+                            <span class="text-lg">Advanced customization options</span>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <div class="w-6 h-6 bg-green-400 rounded-full flex items-center justify-center">
+                                <i class="fas fa-check text-white text-sm"></i>
+                            </div>
+                            <span class="text-lg">Priority support & feedback</span>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <div class="w-6 h-6 bg-green-400 rounded-full flex items-center justify-center">
+                                <i class="fas fa-check text-white text-sm"></i>
+                            </div>
+                            <span class="text-lg">Custom domains & branding</span>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <div class="w-6 h-6 bg-green-400 rounded-full flex items-center justify-center">
+                                <i class="fas fa-check text-white text-sm"></i>
+                            </div>
+                            <span class="text-lg">Detailed analytics & insights</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Right Side - Registration Form -->
+                <div class="form-container rounded-2xl p-8 shadow-2xl">
+                    <div class="text-center mb-8">
+                        <h2 class="text-3xl font-bold text-gray-900 mb-4">Join Early Access</h2>
+                        <p class="text-gray-600">
+                            Get notified when premium features launch and receive exclusive early access.
+                        </p>
+                    </div>
+                    
+                    <form id="early-access-form" class="space-y-6">
+                        <div>
+                            <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
+                                Email Address *
+                            </label>
+                            <input 
+                                type="email" 
+                                id="email" 
+                                name="email" 
+                                required
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                                placeholder="your@email.com"
+                            >
+                        </div>
+                        
+                        <div>
+                            <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
+                                Full Name *
+                            </label>
+                            <input 
+                                type="text" 
+                                id="name" 
+                                name="name" 
+                                required
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                                placeholder="John Smith"
+                            >
+                        </div>
+                        
+                        <div>
+                            <label for="company" class="block text-sm font-medium text-gray-700 mb-2">
+                                Company/Organization
+                            </label>
+                            <input 
+                                type="text" 
+                                id="company" 
+                                name="company"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                                placeholder="Your Company (Optional)"
+                            >
+                        </div>
+                        
+                        <div>
+                            <label for="useCase" class="block text-sm font-medium text-gray-700 mb-2">
+                                What will you use Prompt Machine for? *
+                            </label>
+                            <select 
+                                id="useCase" 
+                                name="useCase" 
+                                required
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                            >
+                                <option value="">Select your primary use case</option>
+                                <option value="business">Business automation tools</option>
+                                <option value="education">Educational content creation</option>
+                                <option value="content">Content & copywriting</option>
+                                <option value="customer-service">Customer service tools</option>
+                                <option value="personal">Personal productivity</option>
+                                <option value="development">Software development</option>
+                                <option value="marketing">Marketing & sales</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label for="experience" class="block text-sm font-medium text-gray-700 mb-2">
+                                Experience with AI tools
+                            </label>
+                            <div class="space-y-2">
+                                <label class="flex items-center">
+                                    <input type="radio" name="experience" value="beginner" class="mr-3 text-blue-600">
+                                    <span>Beginner - New to AI tools</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="radio" name="experience" value="intermediate" class="mr-3 text-blue-600">
+                                    <span>Intermediate - Some experience</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="radio" name="experience" value="advanced" class="mr-3 text-blue-600">
+                                    <span>Advanced - Regular user</span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label for="feedback" class="block text-sm font-medium text-gray-700 mb-2">
+                                What features are you most excited about?
+                            </label>
+                            <textarea 
+                                id="feedback" 
+                                name="feedback" 
+                                rows="3"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                                placeholder="Tell us what you're looking forward to..."
+                            ></textarea>
+                        </div>
+                        
+                        <div class="flex items-start">
+                            <input 
+                                type="checkbox" 
+                                id="newsletter" 
+                                name="newsletter" 
+                                class="mt-1 mr-3 text-blue-600"
+                                checked
+                            >
+                            <label for="newsletter" class="text-sm text-gray-600">
+                                Send me updates about new features, tutorials, and product announcements
+                            </label>
+                        </div>
+                        
+                        <button 
+                            type="submit" 
+                            id="submit-btn"
+                            class="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-4 rounded-lg font-semibold text-lg transition-colors shadow-lg"
+                        >
+                            <span id="submit-text">Join Early Access</span>
+                            <i id="submit-spinner" class="fas fa-spinner fa-spin ml-2 hidden"></i>
+                        </button>
+                        
+                        <p class="text-xs text-gray-500 text-center">
+                            By joining, you agree to receive updates about Prompt Machine. You can unsubscribe at any time.
+                        </p>
+                    </form>
+                    
+                    <!-- Success Message -->
+                    <div id="success-message" class="hidden text-center py-8">
+                        <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-check text-green-600 text-2xl"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-gray-900 mb-4">Welcome to Early Access!</h3>
+                        <p class="text-gray-600 mb-6">
+                            Thank you for joining! We'll notify you as soon as premium features are available.
+                        </p>
+                        <a href="/tools-directory.html" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                            Explore Available Tools
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Features Section -->
+    <section class="py-20 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                    Premium Features Coming Soon
+                </h2>
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                    Get early access to powerful features that will supercharge your AI tool creation
+                </p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Feature Cards -->
+                <div class="bg-gray-50 rounded-2xl p-6 hover:shadow-lg transition-shadow">
+                    <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-4">
+                        <i class="fas fa-infinity text-blue-600 text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-900 mb-3">Unlimited Tools</h3>
+                    <p class="text-gray-600">Create as many AI tools as you need with no limits on projects or deployments.</p>
+                </div>
+                
+                <div class="bg-gray-50 rounded-2xl p-6 hover:shadow-lg transition-shadow">
+                    <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mb-4">
+                        <i class="fas fa-paint-brush text-purple-600 text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-900 mb-3">Custom Branding</h3>
+                    <p class="text-gray-600">White-label your tools with custom domains, logos, and complete brand customization.</p>
+                </div>
+                
+                <div class="bg-gray-50 rounded-2xl p-6 hover:shadow-lg transition-shadow">
+                    <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mb-4">
+                        <i class="fas fa-chart-analytics text-green-600 text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-900 mb-3">Advanced Analytics</h3>
+                    <p class="text-gray-600">Deep insights into user behavior, conversion rates, and performance metrics.</p>
+                </div>
+                
+                <div class="bg-gray-50 rounded-2xl p-6 hover:shadow-lg transition-shadow">
+                    <div class="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center mb-4">
+                        <i class="fas fa-plug text-orange-600 text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-900 mb-3">API Integration</h3>
+                    <p class="text-gray-600">Connect your tools to external services and databases with powerful API capabilities.</p>
+                </div>
+                
+                <div class="bg-gray-50 rounded-2xl p-6 hover:shadow-lg transition-shadow">
+                    <div class="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center mb-4">
+                        <i class="fas fa-headset text-red-600 text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-900 mb-3">Priority Support</h3>
+                    <p class="text-gray-600">Get fast, dedicated support from our team with priority response times.</p>
+                </div>
+                
+                <div class="bg-gray-50 rounded-2xl p-6 hover:shadow-lg transition-shadow">
+                    <div class="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center mb-4">
+                        <i class="fas fa-users-cog text-indigo-600 text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-900 mb-3">Team Collaboration</h3>
+                    <p class="text-gray-600">Work together with your team on tool development and management.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div class="md:col-span-2">
+                    <div class="flex items-center space-x-3 mb-4">
+                        <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-magic text-white text-sm"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold">Prompt Machine</h3>
+                            <p class="text-xs text-gray-400">v1.5.0rc</p>
+                        </div>
+                    </div>
+                    <p class="text-gray-400 mb-4">
+                        Empowering creators to build AI tools without code. 
+                        Transform your ideas into powerful applications.
+                    </p>
+                </div>
+                
+                <div>
+                    <h4 class="font-semibold mb-4">Platform</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="/tools-directory.html" class="hover:text-white transition-colors">Tools Directory</a></li>
+                        <li><a href="/early-access.html" class="hover:text-white transition-colors">Early Access</a></li>
+                        <li><a href="/login.html" class="hover:text-white transition-colors">Login</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="font-semibold mb-4">Support</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="#" class="hover:text-white transition-colors">Documentation</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Help Center</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Contact Us</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="border-t border-gray-800 pt-8 mt-8 text-center text-gray-400">
+                <p>&copy; 2025 Prompt Machine. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Mobile menu toggle
+        document.getElementById('mobile-menu-button').addEventListener('click', function() {
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileMenu.classList.toggle('hidden');
+        });
+
+        // Form submission
+        document.getElementById('early-access-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submit-btn');
+            const submitText = document.getElementById('submit-text');
+            const submitSpinner = document.getElementById('submit-spinner');
+            const form = document.getElementById('early-access-form');
+            const successMessage = document.getElementById('success-message');
+            
+            // Show loading state
+            submitBtn.disabled = true;
+            submitText.textContent = 'Joining...';
+            submitSpinner.classList.remove('hidden');
+            
+            // Collect form data
+            const formData = new FormData(form);
+            const data = {
+                email: formData.get('email'),
+                name: formData.get('name'),
+                company: formData.get('company'),
+                useCase: formData.get('useCase'),
+                experience: formData.get('experience'),
+                feedback: formData.get('feedback'),
+                newsletter: formData.has('newsletter')
+            };
+            
+            try {
+                const response = await fetch('/api/early-access/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                if (response.ok) {
+                    // Show success message
+                    form.classList.add('hidden');
+                    successMessage.classList.remove('hidden');
+                    
+                    // Track registration event
+                    if (typeof gtag !== 'undefined') {
+                        gtag('event', 'early_access_registration', {
+                            'event_category': 'engagement',
+                            'event_label': data.useCase
+                        });
+                    }
+                } else {
+                    throw new Error('Registration failed');
+                }
+                
+            } catch (error) {
+                console.error('Registration error:', error);
+                alert('Registration failed. Please try again or contact support.');
+                
+                // Reset button
+                submitBtn.disabled = false;
+                submitText.textContent = 'Join Early Access';
+                submitSpinner.classList.add('hidden');
+            }
+        });
+    </script>
+
+</body>
+</html>

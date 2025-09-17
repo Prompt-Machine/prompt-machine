@@ -2,7 +2,7 @@ const express = require('express');
 const { Pool } = require('pg');
 const fs = require('fs').promises;
 const path = require('path');
-const { authenticateToken } = require('../middleware/auth');
+const { verifyAuth } = require('../middleware/auth');
 const toolGenerator = require('../services/toolGenerator');
 const claudeService = require('../services/claude');
 
@@ -22,7 +22,7 @@ const pool = new Pool({
 // =====================================================
 
 // GET /api/v3/tools - Get all tools with wizard state
-router.get('/tools', authenticateToken, async (req, res) => {
+router.get('/tools', verifyAuth, async (req, res) => {
     try {
         const result = await pool.query(`
             SELECT 
@@ -50,7 +50,7 @@ router.get('/tools', authenticateToken, async (req, res) => {
 });
 
 // GET /api/v3/tools/:id - Get specific tool with full state
-router.get('/tools/:id', authenticateToken, async (req, res) => {
+router.get('/tools/:id', verifyAuth, async (req, res) => {
     try {
         const { id } = req.params;
 
@@ -92,7 +92,7 @@ router.get('/tools/:id', authenticateToken, async (req, res) => {
 });
 
 // POST /api/v3/tools - Create new tool (starts wizard at step 1)
-router.post('/tools', authenticateToken, async (req, res) => {
+router.post('/tools', verifyAuth, async (req, res) => {
     try {
         const { name, description } = req.body;
 
@@ -139,7 +139,7 @@ router.post('/tools', authenticateToken, async (req, res) => {
 // =====================================================
 
 // PUT /api/v3/tools/:id/step/:step - Update wizard step data
-router.put('/tools/:id/step/:step', authenticateToken, async (req, res) => {
+router.put('/tools/:id/step/:step', verifyAuth, async (req, res) => {
     try {
         const { id, step } = req.params;
         const stepNum = parseInt(step);
@@ -270,7 +270,7 @@ router.put('/tools/:id/step/:step', authenticateToken, async (req, res) => {
 // =====================================================
 
 // POST /api/v3/tools/:id/chat - Chat with Claude for tool concept
-router.post('/tools/:id/chat', authenticateToken, async (req, res) => {
+router.post('/tools/:id/chat', verifyAuth, async (req, res) => {
     try {
         const { id } = req.params;
         const { message } = req.body;
@@ -424,7 +424,7 @@ Keep responses conversational but helpful. Focus on understanding their vision a
 // =====================================================
 
 // POST /api/v3/tools/:id/deploy - Deploy the tool
-router.post('/tools/:id/deploy', authenticateToken, async (req, res) => {
+router.post('/tools/:id/deploy', verifyAuth, async (req, res) => {
     try {
         const { id } = req.params;
 
@@ -557,7 +557,7 @@ router.get('/tools/:id/status', async (req, res) => {
 });
 
 // PUT /api/v3/tools/:id/enable - Enable tool public access
-router.put('/tools/:id/enable', authenticateToken, async (req, res) => {
+router.put('/tools/:id/enable', verifyAuth, async (req, res) => {
     try {
         const { id } = req.params;
         
@@ -612,7 +612,7 @@ router.put('/tools/:id/enable', authenticateToken, async (req, res) => {
 });
 
 // PUT /api/v3/tools/:id/disable - Disable tool public access
-router.put('/tools/:id/disable', authenticateToken, async (req, res) => {
+router.put('/tools/:id/disable', verifyAuth, async (req, res) => {
     try {
         const { id } = req.params;
         
@@ -659,7 +659,7 @@ router.put('/tools/:id/disable', authenticateToken, async (req, res) => {
 });
 
 // PUT /api/v3/tools/:id/toggle - Toggle tool public access
-router.put('/tools/:id/toggle', authenticateToken, async (req, res) => {
+router.put('/tools/:id/toggle', verifyAuth, async (req, res) => {
     try {
         const { id } = req.params;
         
@@ -719,7 +719,7 @@ router.put('/tools/:id/toggle', authenticateToken, async (req, res) => {
 });
 
 // DELETE /api/v3/tools/:id - Delete tool with comprehensive cleanup
-router.delete('/tools/:id', authenticateToken, async (req, res) => {
+router.delete('/tools/:id', verifyAuth, async (req, res) => {
     try {
         const { id } = req.params;
         

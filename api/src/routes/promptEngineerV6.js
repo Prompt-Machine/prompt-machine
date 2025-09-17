@@ -1,6 +1,8 @@
 const express = require('express');
 const { Pool } = require('pg');
 const claude = require('../services/claude');
+const { verifyAuth, requireProjectOwnership, requireFeature } = require('../middleware/auth');
+const { enforcePackageLimits } = require('../middleware/security');
 
 // Database connection
 const pool = new Pool({
@@ -28,6 +30,53 @@ function cleanAIResponse(response) {
     return cleanResponse;
 }
 
+// Helper function to generate proper fallback system prompt
+function generateFallbackSystemPrompt(expertType, projectIdea) {
+    // Extract key role/profession from expertType description
+    const roleKeywords = {
+        'comedian': 'comedian',
+        'joke': 'comedian', 
+        'funny': 'comedian',
+        'humor': 'comedian',
+        'sales': 'sales expert',
+        'computer': 'computer expert',
+        'tech': 'technology expert',
+        'name': 'naming expert',
+        'baby': 'baby naming expert',
+        'marketing': 'marketing expert',
+        'business': 'business consultant',
+        'writer': 'writer',
+        'creative': 'creative assistant',
+        'design': 'design expert',
+        'health': 'health expert',
+        'fitness': 'fitness expert',
+        'finance': 'financial advisor',
+        'legal': 'legal advisor',
+        'education': 'education expert',
+        'cooking': 'cooking expert',
+        'travel': 'travel expert'
+    };
+    
+    let detectedRole = 'AI assistant';
+    const lowerExpert = expertType.toLowerCase();
+    const lowerIdea = projectIdea ? projectIdea.toLowerCase() : '';
+    
+    // Find matching role from keywords
+    for (const [keyword, role] of Object.entries(roleKeywords)) {
+        if (lowerExpert.includes(keyword) || lowerIdea.includes(keyword)) {
+            detectedRole = role;
+            break;
+        }
+    }
+    
+    // Generate contextual system prompt based on project idea
+    if (projectIdea) {
+        return `You are a ${detectedRole}. Help users with ${projectIdea.toLowerCase()}. Provide practical, helpful, and actionable responses based on the form input provided.`;
+    } else {
+        return `You are a ${detectedRole}. Provide helpful, practical, and actionable responses based on user input.`;
+    }
+}
+
 // =====================================================
 // PROJECT MANAGEMENT ENDPOINTS
 // =====================================================
@@ -36,9 +85,9 @@ function cleanAIResponse(response) {
  * GET /api/v6/projects
  * Get all projects for the user
  */
-router.get('/projects', async (req, res) => {
+router.get('/projects', verifyAuth, async (req, res) => {
     try {
-        const userId = req.body.userId || 'e88dad2e-5b81-4a6b-8d42-4b65611428ac'; // Default for testing
+        const userId = req.user.userId;
         
         const query = `
             SELECT 
@@ -73,10 +122,10 @@ router.get('/projects', async (req, res) => {
  * POST /api/v6/projects
  * Create new project with AI assistance
  */
-router.post('/projects', async (req, res) => {
+router.post('/projects', verifyAuth, async (req, res) => {
     try {
-        const { userId, projectIdea, expertType, projectName, manualProject, projectDescription, aiRole, steps, finalizeProject, generatedSteps, refinementAnswers } = req.body;
-        const user_id = userId || 'e88dad2e-5b81-4a6b-8d42-4b65611428ac';
+        const { projectIdea, expertType, projectName, manualProject, projectDescription, aiRole, steps, finalizeProject, generatedSteps, refinementAnswers, accessLevel, requiredPermissionGroup } = req.body;
+        const user_id = req.user.userId;
         
         // Manual project creation for testing
         if (manualProject) {
@@ -84,15 +133,26 @@ router.post('/projects', async (req, res) => {
             
             const subdomain = `test-project-${Date.now().toString().slice(-6)}`;
             
+            // Get permission group ID if needed
+            let permissionGroupId = null;
+            if (requiredPermissionGroup) {
+                const permissionResult = await pool.query(
+                    'SELECT id FROM permission_groups WHERE name = $1',
+                    [requiredPermissionGroup]
+                );
+                permissionGroupId = permissionResult.rows[0]?.id || null;
+            }
+
             const projectQuery = `
                 INSERT INTO projects_v6 
-                (user_id, name, description, ai_role, subdomain)
-                VALUES ($1, $2, $3, $4, $5)
+                (user_id, name, description, ai_role, subdomain, access_level, required_permission_group_id)
+                VALUES ($1, $2, $3, $4, $5, $6, $7)
                 RETURNING *
             `;
             
             const projectResult = await pool.query(projectQuery, [
-                user_id, projectName, projectDescription, aiRole, subdomain
+                user_id, projectName, projectDescription, aiRole, subdomain, 
+                accessLevel || 'public', permissionGroupId
             ]);
             
             const project = projectResult.rows[0];
@@ -114,7 +174,7 @@ router.post('/projects', async (req, res) => {
                 project_name: projectName || generatedSteps[0]?.project_name || 'AI Tool',
                 project_description: generatedSteps.project_description || 'AI-generated tool',
                 ai_persona_description: generatedSteps.ai_persona_description || `${expertType} with specialized knowledge`,
-                system_prompt: generatedSteps.system_prompt || `You are a ${expertType} AI assistant.`,
+                system_prompt: generatedSteps.system_prompt || generateFallbackSystemPrompt(expertType, projectIdea),
                 header_title: generatedSteps.header_title || projectName || 'AI Tool',
                 header_subtitle: generatedSteps.header_subtitle || 'Get professional results with AI',
                 steps: generatedSteps || []
@@ -131,7 +191,7 @@ router.post('/projects', async (req, res) => {
             });
         }
         
-        console.log(`🚀 Creating new v6 project: ${expertType} - ${projectIdea}`);
+        console.log(`🚀 Creating new v6.1.0rc project: ${expertType} - ${projectIdea}`);
         
         // Get AI to suggest project structure - simplified for reliability  
         const structurePrompt = `Create a multi-step form for: "${projectIdea}" (Expert: ${expertType})
@@ -327,7 +387,7 @@ Make 2-3 steps with 2-3 fields each. Use field types: text, textarea, select. Ke
  * GET /api/v6/projects/:projectId
  * Get detailed project with steps and fields
  */
-router.get('/projects/:projectId', async (req, res) => {
+router.get('/projects/:projectId', verifyAuth, async (req, res) => {
     try {
         const { projectId } = req.params;
         
@@ -402,7 +462,7 @@ router.get('/projects/:projectId', async (req, res) => {
 router.put('/projects/:projectId', async (req, res) => {
     try {
         const { projectId } = req.params;
-        const { name, description, ai_role, header_title, header_subtitle, updateSubdomain } = req.body;
+        const { name, description, ai_role, header_title, header_subtitle, updateSubdomain, access_level, required_package_id } = req.body;
         
         // Get current project to check if name changed
         const currentProject = await pool.query('SELECT name, subdomain FROM projects_v6 WHERE id = $1', [projectId]);
@@ -455,14 +515,16 @@ router.put('/projects/:projectId', async (req, res) => {
                 ai_role = COALESCE($3, ai_role), 
                 header_title = COALESCE($4, header_title), 
                 header_subtitle = COALESCE($5, header_subtitle), 
-                subdomain = $6, 
+                subdomain = $6,
+                access_level = COALESCE($7, access_level),
+                required_package_id = $8,
                 updated_at = NOW()
-            WHERE id = $7
+            WHERE id = $9
             RETURNING *
         `;
         
         const result = await pool.query(query, [
-            name, description, ai_role, header_title, header_subtitle, subdomain, projectId
+            name, description, ai_role, header_title, header_subtitle, subdomain, access_level, required_package_id, projectId
         ]);
         
         res.json({
@@ -483,7 +545,7 @@ router.put('/projects/:projectId', async (req, res) => {
  * DELETE /api/v6/projects/:projectId
  * Delete project and all related data (including deployed tool files)
  */
-router.delete('/projects/:projectId', async (req, res) => {
+router.delete('/projects/:projectId', verifyAuth, async (req, res) => {
     const toolGeneratorV6 = require('../services/toolGeneratorV6');
     
     try {
@@ -579,11 +641,11 @@ router.put('/projects/:projectId/toggle-enabled', async (req, res) => {
  * POST /api/v6/projects/:projectId/deploy
  * Deploy project as public tool
  */
-router.post('/projects/:projectId/deploy', async (req, res) => {
+router.post('/projects/:projectId/deploy', verifyAuth, async (req, res) => {
     try {
         const { projectId } = req.params;
         
-        console.log(`🚀 Deploying v6 project: ${projectId}`);
+        console.log(`🚀 Deploying v6.1.0rc project: ${projectId}`);
 
         // Get project with all its data
         const projectResult = await pool.query(`
@@ -653,7 +715,7 @@ router.post('/projects/:projectId/deploy', async (req, res) => {
             WHERE id = $1
         `, [projectId]);
 
-        console.log(`✅ v6 project deployed successfully: ${deploymentResult.url}`);
+        console.log(`✅ v6.1.0rc project deployed successfully: ${deploymentResult.url}`);
 
         res.json({
             success: true,
@@ -1160,7 +1222,19 @@ router.delete('/steps/:stepId', async (req, res) => {
 router.post('/steps/:stepId/fields', async (req, res) => {
     try {
         const { stepId } = req.params;
-        const { name, label, field_type, placeholder, description, is_required } = req.body;
+        const { 
+            name, label, field_type, placeholder, description, is_required,
+            multiple, disabled, minLength, maxLength, pattern, options
+        } = req.body;
+        
+        // Build validation rules object
+        const validationRules = {};
+        if (multiple !== undefined) validationRules.multiple = multiple;
+        if (disabled !== undefined) validationRules.disabled = disabled;
+        if (minLength !== undefined) validationRules.minLength = parseInt(minLength);
+        if (maxLength !== undefined) validationRules.maxLength = parseInt(maxLength);
+        if (pattern !== undefined && pattern.trim()) validationRules.pattern = pattern.trim();
+        if (options !== undefined && Array.isArray(options)) validationRules.options = options;
         
         // Get current max order for this step
         const maxOrderResult = await pool.query(`
@@ -1173,13 +1247,14 @@ router.post('/steps/:stepId/fields', async (req, res) => {
         
         const query = `
             INSERT INTO project_fields_v6 
-            (step_id, name, label, field_type, placeholder, description, is_required, field_order)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            (step_id, name, label, field_type, placeholder, description, is_required, field_order, validation_rules)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
             RETURNING *
         `;
         
         const result = await pool.query(query, [
-            stepId, name, label, field_type, placeholder, description, is_required, nextOrder
+            stepId, name, label, field_type, placeholder, description, is_required, nextOrder,
+            JSON.stringify(validationRules)
         ]);
         
         res.json({
@@ -1203,18 +1278,31 @@ router.post('/steps/:stepId/fields', async (req, res) => {
 router.put('/fields/:fieldId', async (req, res) => {
     try {
         const { fieldId } = req.params;
-        const { name, label, field_type, placeholder, description, is_required } = req.body;
+        const { 
+            name, label, field_type, placeholder, description, is_required,
+            multiple, disabled, minLength, maxLength, pattern, options
+        } = req.body;
+        
+        // Build validation rules object
+        const validationRules = {};
+        if (multiple !== undefined) validationRules.multiple = multiple;
+        if (disabled !== undefined) validationRules.disabled = disabled;
+        if (minLength !== undefined) validationRules.minLength = parseInt(minLength);
+        if (maxLength !== undefined) validationRules.maxLength = parseInt(maxLength);
+        if (pattern !== undefined && pattern.trim()) validationRules.pattern = pattern.trim();
+        if (options !== undefined && Array.isArray(options)) validationRules.options = options;
         
         const query = `
             UPDATE project_fields_v6 
             SET name = $1, label = $2, field_type = $3, placeholder = $4, 
-                description = $5, is_required = $6, updated_at = NOW()
-            WHERE id = $7
+                description = $5, is_required = $6, validation_rules = $7, updated_at = NOW()
+            WHERE id = $8
             RETURNING *
         `;
         
         const result = await pool.query(query, [
-            name, label, field_type, placeholder, description, is_required, fieldId
+            name, label, field_type, placeholder, description, is_required, 
+            JSON.stringify(validationRules), fieldId
         ]);
         
         if (result.rows.length === 0) {
@@ -1595,7 +1683,7 @@ router.post('/public/:subdomain/submit', async (req, res) => {
  * POST /api/v6/projects/:projectId/clone
  * Clone a project with all steps and fields
  */
-router.post('/projects/:projectId/clone', async (req, res) => {
+router.post('/projects/:projectId/clone', verifyAuth, async (req, res) => {
     try {
         const { projectId } = req.params;
         const { newName } = req.body;
@@ -1986,6 +2074,99 @@ router.post('/tools/generate', async (req, res) => {
             });
         }
 
+        // Get project details to check access requirements
+        const projectQuery = await pool.query(
+            'SELECT access_level, required_package_id, name FROM projects_v6 WHERE id = $1',
+            [project_id]
+        );
+
+        if (projectQuery.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                error: 'Project not found'
+            });
+        }
+
+        const project = projectQuery.rows[0];
+        
+        // Check if tool requires authentication and package access
+        if (project.access_level !== 'public') {
+            const authHeader = req.headers.authorization;
+            if (!authHeader || !authHeader.startsWith('Bearer ')) {
+                return res.status(401).json({
+                    success: false,
+                    error: 'Authentication required for this tool',
+                    requires_auth: true,
+                    access_level: project.access_level
+                });
+            }
+
+            // Verify token and get user
+            const token = authHeader.split(' ')[1];
+            let user_id;
+            
+            try {
+                const jwt = require('jsonwebtoken');
+                const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+                user_id = decoded.userId;
+            } catch (error) {
+                return res.status(401).json({
+                    success: false,
+                    error: 'Invalid authentication token'
+                });
+            }
+
+            // Check if user has required package access
+            if (project.required_package_id) {
+                const packageCheck = await pool.query(`
+                    SELECT user_has_feature($1, 'access_private_tools') as has_access,
+                           user_can_access_project($1, $2) as project_access
+                `, [user_id, project_id]);
+                
+                const { has_access, project_access } = packageCheck.rows[0];
+                
+                if (!has_access || !project_access) {
+                    // Get required package details for error message
+                    const packageInfo = await pool.query(
+                        'SELECT name, description FROM packages WHERE id = $1',
+                        [project.required_package_id]
+                    );
+                    
+                    return res.status(403).json({
+                        success: false,
+                        error: 'Insufficient permissions to access this tool',
+                        required_package: packageInfo.rows[0] || null,
+                        access_level: project.access_level,
+                        upgrade_required: true
+                    });
+                }
+            }
+
+            // Check usage limits for authenticated users
+            const today = new Date().toISOString().split('T')[0];
+            const usageCheck = await pool.query(`
+                SELECT COUNT(*) as daily_usage
+                FROM project_sessions_v6 ps
+                JOIN projects_v6 p ON ps.project_id = p.id
+                WHERE p.user_id = $1 AND DATE(ps.started_at) = $2
+            `, [user_id, today]);
+            
+            const limitsResult = await pool.query('SELECT get_user_limits($1) as limits', [user_id]);
+            const limits = limitsResult.rows[0].limits;
+            const daily_limit = limits.max_requests_per_hour * 24; // Convert hourly to daily estimate
+            const { daily_usage } = usageCheck.rows[0];
+            
+            if (parseInt(daily_usage) >= daily_limit) {
+                return res.status(429).json({
+                    success: false,
+                    error: 'Daily usage limit exceeded',
+                    daily_limit: daily_limit,
+                    current_usage: daily_usage,
+                    upgrade_required: true
+                });
+            }
+        }
+
         // Build user prompt from form data
         let userPrompt = `Please process the following information:\n\n`;
         
@@ -2090,6 +2271,301 @@ router.post('/tools/track-usage', async (req, res) => {
     }
 });
 
+/**
+ * PUT /api/v6/projects/:projectId/fields/:fieldId
+ * Update a specific field in a project
+ */
+router.put('/projects/:projectId/fields/:fieldId', verifyAuth, async (req, res) => {
+    try {
+        const { projectId, fieldId } = req.params;
+        const { 
+            name, label, field_type, placeholder, description, 
+            required, field_options, field_order, validation 
+        } = req.body;
+
+        console.log(`🔧 Updating field ${fieldId} in project ${projectId}`);
+
+        // Verify project exists and user has access
+        const projectQuery = await pool.query('SELECT user_id FROM projects_v6 WHERE id = $1', [projectId]);
+        if (projectQuery.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                error: 'Project not found'
+            });
+        }
+
+        // Verify field exists in this project
+        const fieldQuery = await pool.query(`
+            SELECT pf.* FROM project_fields_v6 pf
+            JOIN project_steps_v6 ps ON pf.step_id = ps.id
+            WHERE pf.id = $1 AND ps.project_id = $2
+        `, [fieldId, projectId]);
+
+        if (fieldQuery.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                error: 'Field not found in this project'
+            });
+        }
+
+        // Update field
+        const updateQuery = `
+            UPDATE project_fields_v6 
+            SET name = COALESCE($1, name),
+                label = COALESCE($2, label),
+                field_type = COALESCE($3, field_type),
+                placeholder = COALESCE($4, placeholder),
+                description = COALESCE($5, description),
+                is_required = COALESCE($6, is_required),
+                field_order = COALESCE($7, field_order),
+                validation_rules = COALESCE($8, validation_rules),
+                updated_at = NOW()
+            WHERE id = $9
+            RETURNING *
+        `;
+
+        const result = await pool.query(updateQuery, [
+            name, label, field_type, placeholder, description,
+            required, field_order, validation ? JSON.stringify(validation) : null,
+            fieldId
+        ]);
+
+        // Update field choices if provided
+        if (field_options && Array.isArray(field_options)) {
+            // Delete existing choices
+            await pool.query('DELETE FROM project_choices_v6 WHERE field_id = $1', [fieldId]);
+            
+            // Insert new choices
+            for (let i = 0; i < field_options.length; i++) {
+                const option = field_options[i];
+                await pool.query(`
+                    INSERT INTO project_choices_v6 (field_id, choice_value, choice_label, choice_order)
+                    VALUES ($1, $2, $3, $4)
+                `, [fieldId, option.value, option.label, i]);
+            }
+        }
+
+        console.log(`✅ Field updated successfully: ${result.rows[0].name}`);
+        
+        res.json({
+            success: true,
+            field: result.rows[0],
+            message: 'Field updated successfully'
+        });
+
+    } catch (error) {
+        console.error('Error updating field:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to update field'
+        });
+    }
+});
+
+/**
+ * DELETE /api/v6/projects/:projectId/fields/:fieldId
+ * Delete a specific field from a project
+ */
+router.delete('/projects/:projectId/fields/:fieldId', verifyAuth, async (req, res) => {
+    try {
+        const { projectId, fieldId } = req.params;
+
+        console.log(`🗑️ Deleting field ${fieldId} from project ${projectId}`);
+
+        // Verify field exists in this project
+        const fieldQuery = await pool.query(`
+            SELECT pf.* FROM project_fields_v6 pf
+            JOIN project_steps_v6 ps ON pf.step_id = ps.id
+            WHERE pf.id = $1 AND ps.project_id = $2
+        `, [fieldId, projectId]);
+
+        if (fieldQuery.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                error: 'Field not found in this project'
+            });
+        }
+
+        // Delete field (choices will be deleted by cascade)
+        await pool.query('DELETE FROM project_fields_v6 WHERE id = $1', [fieldId]);
+
+        console.log(`✅ Field deleted successfully`);
+        
+        res.json({
+            success: true,
+            message: 'Field deleted successfully'
+        });
+
+    } catch (error) {
+        console.error('Error deleting field:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to delete field'
+        });
+    }
+});
+
+/**
+ * POST /api/v6/projects/:projectId/steps/:stepId/fields
+ * Add a new field to a project step
+ */
+router.post('/projects/:projectId/steps/:stepId/fields', verifyAuth, async (req, res) => {
+    try {
+        const { projectId, stepId } = req.params;
+        const { 
+            name, label, field_type, placeholder, description, 
+            required, field_options, field_order, validation 
+        } = req.body;
+
+        console.log(`➕ Adding new field to step ${stepId} in project ${projectId}`);
+
+        // Verify step exists in this project
+        const stepQuery = await pool.query(
+            'SELECT id FROM project_steps_v6 WHERE id = $1 AND project_id = $2',
+            [stepId, projectId]
+        );
+
+        if (stepQuery.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                error: 'Step not found in this project'
+            });
+        }
+
+        // Get next field order if not provided
+        let nextOrder = field_order;
+        if (!nextOrder) {
+            const orderQuery = await pool.query(
+                'SELECT COALESCE(MAX(field_order), 0) + 1 as next_order FROM project_fields_v6 WHERE step_id = $1',
+                [stepId]
+            );
+            nextOrder = orderQuery.rows[0].next_order;
+        }
+
+        // Insert new field
+        const fieldResult = await pool.query(`
+            INSERT INTO project_fields_v6 
+            (step_id, name, label, field_type, placeholder, description, is_required, field_order, validation_rules)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            RETURNING *
+        `, [
+            stepId, name || 'new_field', label || 'New Field', field_type || 'text',
+            placeholder, description, required || false, nextOrder,
+            validation ? JSON.stringify(validation) : null
+        ]);
+
+        const fieldId = fieldResult.rows[0].id;
+
+        // Add field choices if provided
+        if (field_options && Array.isArray(field_options)) {
+            for (let i = 0; i < field_options.length; i++) {
+                const option = field_options[i];
+                await pool.query(`
+                    INSERT INTO project_choices_v6 (field_id, choice_value, choice_label, choice_order)
+                    VALUES ($1, $2, $3, $4)
+                `, [fieldId, option.value, option.label, i]);
+            }
+        }
+
+        console.log(`✅ Field added successfully: ${fieldResult.rows[0].name}`);
+        
+        res.json({
+            success: true,
+            field: fieldResult.rows[0],
+            message: 'Field added successfully'
+        });
+
+    } catch (error) {
+        console.error('Error adding field:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to add field'
+        });
+    }
+});
+
+/**
+ * PUT /api/v6/projects/:projectId/fields/reorder
+ * Reorder fields in a project step
+ */
+router.put('/projects/:projectId/fields/reorder', async (req, res) => {
+    try {
+        const { projectId } = req.params;
+        const { fieldOrders } = req.body; // Array of {fieldId, newOrder} objects
+
+        if (!fieldOrders || !Array.isArray(fieldOrders)) {
+            return res.status(400).json({
+                success: false,
+                error: 'fieldOrders array is required'
+            });
+        }
+
+        console.log(`🔄 Reordering ${fieldOrders.length} fields in project ${projectId}`);
+
+        // Update field orders in batch
+        for (const { fieldId, newOrder } of fieldOrders) {
+            await pool.query(
+                'UPDATE project_fields_v6 SET field_order = $1 WHERE id = $2',
+                [newOrder, fieldId]
+            );
+        }
+
+        console.log(`✅ Field orders updated successfully`);
+        
+        res.json({
+            success: true,
+            message: 'Field orders updated successfully'
+        });
+
+    } catch (error) {
+        console.error('Error reordering fields:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to reorder fields'
+        });
+    }
+});
+
+/**
+ * POST /api/v6/projects/:projectId/access-check
+ * Check if user has access to a specific project
+ */
+router.post('/projects/:projectId/access-check', async (req, res) => {
+    try {
+        const { projectId } = req.params;
+        const { user_id } = req.body;
+        
+        if (!user_id) {
+            return res.status(400).json({
+                success: false,
+                error: 'User ID required'
+            });
+        }
+
+        // Check project access using database function
+        const accessCheck = await pool.query(`
+            SELECT user_can_access_project($1, $2) as has_access,
+                   user_has_feature($1, 'access_private_tools') as has_tool_access
+        `, [user_id, projectId]);
+        
+        const { has_access, has_tool_access } = accessCheck.rows[0];
+        
+        res.json({
+            success: true,
+            has_access: has_access && has_tool_access,
+            project_access: has_access,
+            tool_access: has_tool_access
+        });
+        
+    } catch (error) {
+        console.error('Access check error:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to check access'
+        });
+    }
+});
+
 // Export router
 // =====================================================
 // HELPER FUNCTIONS
@@ -2120,12 +2596,50 @@ async function createProjectWithStructure(user_id, projectStructure, expertType,
             return result.rows.length === 0;
         };
 
+        // Determine package access based on project complexity and expert type
+        let accessLevel = 'public';
+        let requiredPackageId = null;
+        
+        // Get package IDs for reference
+        const packagesResult = await pool.query('SELECT id, name FROM packages WHERE is_active = true');
+        const packages = {};
+        packagesResult.rows.forEach(pkg => packages[pkg.name] = pkg.id);
+        
+        // Determine access level based on project characteristics
+        const stepsCount = projectStructure.steps ? projectStructure.steps.length : 0;
+        const hasAdvancedFields = projectStructure.steps && projectStructure.steps.some(step => 
+            step.fields && step.fields.some(field => 
+                ['file', 'multi_select', 'conditional'].includes(field.type)
+            )
+        );
+        
+        // Premium features: complex multi-step forms, advanced field types, business applications
+        if (stepsCount > 3 || hasAdvancedFields || 
+            expertType.toLowerCase().includes('business') || 
+            expertType.toLowerCase().includes('marketing') ||
+            expertType.toLowerCase().includes('sales')) {
+            accessLevel = 'premium';
+            requiredPackageId = packages['premium'];
+        }
+        // Registered user features: moderate complexity
+        else if (stepsCount > 1) {
+            accessLevel = 'registered';
+            requiredPackageId = packages['registered'];
+        }
+        // Enterprise features: highly specialized or technical
+        if (expertType.toLowerCase().includes('enterprise') || 
+            expertType.toLowerCase().includes('developer') ||
+            expertType.toLowerCase().includes('technical')) {
+            accessLevel = 'enterprise';
+            requiredPackageId = packages['enterprise'];
+        }
+
         // Create project first to get ID, then update with proper subdomain
         const projectQuery = `
             INSERT INTO projects_v6 
             (user_id, name, description, ai_role, ai_persona_description, system_prompt, 
-             subdomain, header_title, header_subtitle)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+             subdomain, header_title, header_subtitle, access_level, required_package_id)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
             RETURNING *
         `;
         
@@ -2138,7 +2652,9 @@ async function createProjectWithStructure(user_id, projectStructure, expertType,
             projectStructure.system_prompt,
             null, // subdomain will be set after validation
             projectStructure.header_title,
-            projectStructure.header_subtitle
+            projectStructure.header_subtitle,
+            accessLevel,
+            requiredPackageId
         ]);
         
         const project = projectResult.rows[0];
@@ -2260,5 +2776,443 @@ async function createProjectWithStructure(user_id, projectStructure, expertType,
         });
     }
 }
+
+// =====================================================
+// PROJECT UPGRADE ENDPOINT
+// =====================================================
+
+/**
+ * POST /api/v6/projects/:projectId/upgrade
+ * Upgrade/regenerate project with latest standards
+ */
+router.post('/projects/:projectId/upgrade', async (req, res) => {
+    try {
+        const { projectId } = req.params;
+        const { upgradeType = 'full' } = req.body; // 'full', 'frontend-only', 'structure-only'
+        
+        console.log(`🔄 Starting upgrade for project: ${projectId} (type: ${upgradeType})`);
+        
+        // Get current project data with all steps and fields
+        const projectQuery = `
+            SELECT 
+                p.*,
+                jsonb_agg(
+                    jsonb_build_object(
+                        'id', ps.id,
+                        'name', ps.name,
+                        'description', ps.description,
+                        'step_order', ps.step_order,
+                        'page_title', ps.page_title,
+                        'page_subtitle', ps.page_subtitle,
+                        'instructions', ps.instructions,
+                        'fields', ps.fields
+                    ) ORDER BY ps.step_order
+                ) as steps
+            FROM projects_v6 p
+            LEFT JOIN (
+                SELECT 
+                    ps.*,
+                    jsonb_agg(
+                        jsonb_build_object(
+                            'id', pf.id,
+                            'name', pf.name,
+                            'label', pf.label,
+                            'field_type', pf.field_type,
+                            'placeholder', pf.placeholder,
+                            'description', pf.description,
+                            'is_required', pf.is_required,
+                            'field_order', pf.field_order,
+                            'validation_rules', pf.validation_rules,
+                            'choices', pf.choices
+                        ) ORDER BY pf.field_order
+                    ) as fields
+                FROM project_steps_v6 ps
+                LEFT JOIN (
+                    SELECT 
+                        pf.*,
+                        CASE 
+                            WHEN pf.field_type IN ('select', 'radio', 'checkbox') THEN
+                                COALESCE(
+                                    jsonb_agg(
+                                        jsonb_build_object(
+                                            'id', pc.id,
+                                            'label', pc.label,
+                                            'value', pc.value,
+                                            'choice_order', pc.choice_order,
+                                            'is_default', pc.is_default
+                                        ) ORDER BY pc.choice_order
+                                    ) FILTER (WHERE pc.id IS NOT NULL),
+                                    '[]'::jsonb
+                                )
+                            ELSE '[]'::jsonb
+                        END as choices
+                    FROM project_fields_v6 pf
+                    LEFT JOIN project_choices_v6 pc ON pf.id = pc.field_id
+                    GROUP BY pf.id, pf.step_id, pf.name, pf.label, pf.field_type, 
+                             pf.placeholder, pf.description, pf.is_required, pf.field_order, pf.validation_rules
+                ) pf ON ps.id = pf.step_id
+                GROUP BY ps.id, ps.project_id, ps.name, ps.description, ps.step_order,
+                         ps.page_title, ps.page_subtitle, ps.instructions
+            ) ps ON p.id = ps.project_id
+            WHERE p.id = $1
+            GROUP BY p.id, p.user_id, p.name, p.description, p.ai_role, p.ai_persona_description,
+                     p.system_prompt, p.header_title, p.header_subtitle, p.subdomain, p.deployed, p.enabled
+        `;
+        
+        const projectResult = await pool.query(projectQuery, [projectId]);
+        
+        if (projectResult.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                error: 'Project not found'
+            });
+        }
+        
+        const project = projectResult.rows[0];
+        
+        // Track upgrade analytics
+        const upgradeData = {
+            projectId: projectId,
+            upgradeType: upgradeType,
+            previousVersion: project.version || '1.0.0',
+            timestamp: new Date().toISOString()
+        };
+        
+        // Update project version and last upgrade timestamp
+        await pool.query(`
+            UPDATE projects_v6 
+            SET updated_at = NOW(),
+                version = COALESCE(version, '1.0.0-alpha')
+            WHERE id = $1
+        `, [projectId]);
+        
+        let upgradeResults = {
+            projectId: projectId,
+            upgradeType: upgradeType,
+            completed: []
+        };
+        
+        // Perform different upgrade types
+        if (upgradeType === 'full' || upgradeType === 'frontend-only') {
+            console.log('🎨 Upgrading frontend with latest standards...');
+            
+            // Use the existing toolGeneratorV6 service to regenerate with latest standards
+            const toolGeneratorV6 = require('../services/toolGeneratorV6');
+            const generator = new toolGeneratorV6();
+            
+            try {
+                const deploymentResult = await generator.deployProject(project);
+                upgradeResults.completed.push('frontend-regeneration');
+                upgradeResults.deploymentUrl = deploymentResult.url;
+                
+                console.log(`✅ Frontend upgraded successfully: ${deploymentResult.url}`);
+            } catch (deployError) {
+                console.error('Frontend upgrade failed:', deployError);
+                upgradeResults.errors = upgradeResults.errors || [];
+                upgradeResults.errors.push('frontend-regeneration-failed: ' + deployError.message);
+            }
+        }
+        
+        if (upgradeType === 'full' || upgradeType === 'structure-only') {
+            console.log('🗄️ Upgrading database structure...');
+            
+            // Add any missing columns or update schema
+            try {
+                // Ensure validation_rules column exists (backwards compatibility)
+                await pool.query(`
+                    ALTER TABLE project_fields_v6 
+                    ADD COLUMN IF NOT EXISTS validation_rules JSONB DEFAULT '{}'::jsonb
+                `);
+                
+                // Update any fields that don't have validation_rules set
+                await pool.query(`
+                    UPDATE project_fields_v6 
+                    SET validation_rules = '{}'::jsonb 
+                    WHERE validation_rules IS NULL AND step_id IN (
+                        SELECT id FROM project_steps_v6 WHERE project_id = $1
+                    )
+                `, [projectId]);
+                
+                upgradeResults.completed.push('database-structure');
+                console.log('✅ Database structure upgraded successfully');
+            } catch (structureError) {
+                console.error('Structure upgrade failed:', structureError);
+                upgradeResults.errors = upgradeResults.errors || [];
+                upgradeResults.errors.push('structure-upgrade-failed: ' + structureError.message);
+            }
+        }
+        
+        // Track upgrade completion
+        try {
+            await pool.query(`
+                INSERT INTO tool_analytics_v6 
+                (project_id, event_type, session_data) 
+                VALUES ($1, $2, $3)
+            `, [
+                projectId, 
+                'upgrade',
+                JSON.stringify(upgradeData)
+            ]);
+        } catch (analyticsError) {
+            console.log('Analytics tracking failed for upgrade:', analyticsError.message);
+        }
+        
+        console.log(`✅ Project upgrade completed: ${projectId}`);
+        
+        res.json({
+            success: true,
+            message: 'Project upgraded successfully',
+            results: upgradeResults,
+            project: {
+                id: project.id,
+                name: project.name,
+                subdomain: project.subdomain,
+                deployed: project.deployed
+            }
+        });
+        
+    } catch (error) {
+        console.error('Error upgrading project:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to upgrade project: ' + error.message
+        });
+    }
+});
+
+/**
+ * POST /api/v6/projects/:id/clone
+ * Clone a project with new permissions for testing
+ */
+router.post('/projects/:id/clone', async (req, res) => {
+    try {
+        const { id: sourceProjectId } = req.params;
+        const { newName, accessLevel, requiredPermissionGroup, userId } = req.body;
+        const user_id = userId || 'e88dad2e-5b81-4a6b-8d42-4b65611428ac';
+        
+        console.log(`🔄 Cloning project ${sourceProjectId} with new permissions...`);
+
+        // Get the source project
+        const sourceProject = await pool.query(`
+            SELECT * FROM projects_v6 WHERE id = $1
+        `, [sourceProjectId]);
+
+        if (sourceProject.rows.length === 0) {
+            return res.status(404).json({ error: 'Source project not found' });
+        }
+
+        const source = sourceProject.rows[0];
+
+        // Get permission group ID if needed
+        let permissionGroupId = null;
+        if (requiredPermissionGroup) {
+            const permissionResult = await pool.query(
+                'SELECT id FROM permission_groups WHERE name = $1',
+                [requiredPermissionGroup]
+            );
+            permissionGroupId = permissionResult.rows[0]?.id || null;
+        }
+
+        // Create new project with different permissions
+        const newSubdomain = `${source.subdomain}-clone-${Date.now().toString().slice(-6)}`;
+        const projectName = newName || `${source.name} (Clone)`;
+
+        const newProjectResult = await pool.query(`
+            INSERT INTO projects_v6 
+            (user_id, name, description, ai_role, ai_persona_description, system_prompt, 
+             subdomain, access_level, required_permission_group_id, deployed, enabled)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, false, true)
+            RETURNING *
+        `, [
+            user_id,
+            projectName,
+            source.description,
+            source.ai_role,
+            source.ai_persona_description,
+            source.system_prompt,
+            newSubdomain,
+            accessLevel || 'public',
+            permissionGroupId
+        ]);
+
+        const newProject = newProjectResult.rows[0];
+
+        // Clone all steps
+        const stepsResult = await pool.query(`
+            SELECT * FROM project_steps_v6 
+            WHERE project_id = $1 
+            ORDER BY step_order ASC
+        `, [sourceProjectId]);
+
+        const stepMappings = {};
+
+        for (const sourceStep of stepsResult.rows) {
+            const newStepResult = await pool.query(`
+                INSERT INTO project_steps_v6 
+                (project_id, name, description, step_order)
+                VALUES ($1, $2, $3, $4)
+                RETURNING *
+            `, [
+                newProject.id,
+                sourceStep.name,
+                sourceStep.description,
+                sourceStep.step_order
+            ]);
+
+            const newStep = newStepResult.rows[0];
+            stepMappings[sourceStep.id] = newStep.id;
+
+            // Clone fields for this step
+            const fieldsResult = await pool.query(`
+                SELECT * FROM project_fields_v6 
+                WHERE step_id = $1 
+                ORDER BY field_order ASC
+            `, [sourceStep.id]);
+
+            const fieldMappings = {};
+
+            for (const sourceField of fieldsResult.rows) {
+                const newFieldResult = await pool.query(`
+                    INSERT INTO project_fields_v6 
+                    (step_id, name, label, field_type, placeholder, description, 
+                     is_required, field_order, validation_rules)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                    RETURNING *
+                `, [
+                    newStep.id,
+                    sourceField.name,
+                    sourceField.label,
+                    sourceField.field_type,
+                    sourceField.placeholder,
+                    sourceField.description,
+                    sourceField.is_required,
+                    sourceField.field_order,
+                    sourceField.validation_rules
+                ]);
+
+                const newField = newFieldResult.rows[0];
+                fieldMappings[sourceField.id] = newField.id;
+
+                // Clone choices for this field
+                const choicesResult = await pool.query(`
+                    SELECT * FROM project_choices_v6 
+                    WHERE field_id = $1 
+                    ORDER BY choice_order ASC
+                `, [sourceField.id]);
+
+                for (const sourceChoice of choicesResult.rows) {
+                    await pool.query(`
+                        INSERT INTO project_choices_v6 
+                        (field_id, value, label, choice_order)
+                        VALUES ($1, $2, $3, $4)
+                    `, [
+                        newField.id,
+                        sourceChoice.value,
+                        sourceChoice.label,
+                        sourceChoice.choice_order
+                    ]);
+                }
+            }
+        }
+
+        console.log(`✅ Project cloned successfully: ${newProject.name}`);
+
+        res.json({
+            success: true,
+            message: 'Project cloned successfully',
+            project: newProject,
+            cloneInfo: {
+                sourceProject: source.name,
+                newName: projectName,
+                newSubdomain: newSubdomain,
+                accessLevel: accessLevel || 'public',
+                requiredPermissionGroup: requiredPermissionGroup || null
+            }
+        });
+
+    } catch (error) {
+        console.error('Error cloning project:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to clone project: ' + error.message
+        });
+    }
+});
+
+// Recreate project - reset to step 1 with existing basic info
+router.post('/projects/:projectId/recreate', verifyAuth, async (req, res) => {
+    try {
+        const { projectId } = req.params;
+        
+        // Get the original project data
+        const originalProject = await pool.query(`
+            SELECT * FROM projects_v6 WHERE id = $1
+        `, [projectId]);
+        
+        if (originalProject.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                error: 'Project not found'
+            });
+        }
+        
+        const original = originalProject.rows[0];
+        
+        // Create a new project with the same basic info but reset workflow state
+        const recreatedProject = await pool.query(`
+            INSERT INTO projects_v6 
+            (user_id, name, description, ai_role, ai_persona_description, 
+             header_title, header_subtitle, seo_title, seo_description, seo_keywords,
+             access_level, required_permission_group_id, required_package_id,
+             deployed, enabled, public_accessible)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, false, false, $14)
+            RETURNING *
+        `, [
+            original.user_id,
+            original.name + ' (Recreated)',
+            original.description,
+            original.ai_role,
+            original.ai_persona_description,
+            original.header_title,
+            original.header_subtitle,
+            original.seo_title,
+            original.seo_description,
+            original.seo_keywords,
+            original.access_level,
+            original.required_permission_group_id,
+            original.required_package_id,
+            original.public_accessible
+        ]);
+        
+        const newProject = recreatedProject.rows[0];
+        
+        // The project is now ready to go through the step 1-3 workflow again
+        // No steps, fields, or subdomain are copied - it starts fresh
+        
+        res.json({
+            success: true,
+            message: 'Project recreated successfully. You can now go through the workflow from step 1.',
+            project: newProject,
+            recreateInfo: {
+                originalProjectId: projectId,
+                originalName: original.name,
+                newProjectId: newProject.id,
+                newName: newProject.name,
+                preservedData: {
+                    ai_role: original.ai_role,
+                    description: original.description,
+                    access_settings: original.access_level
+                }
+            }
+        });
+        
+    } catch (error) {
+        console.error('Error recreating project:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to recreate project: ' + error.message
+        });
+    }
+});
 
 module.exports = router;

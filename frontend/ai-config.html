@@ -163,32 +163,32 @@
 
         // Load current AI configuration
         async function loadConfiguration() {
-            // Wait for PMConfig to be available
-            await waitForConfig();
             try {
                 console.log('🔧 Loading AI configuration...');
-                console.log('PMConfig available:', typeof PMConfig !== 'undefined');
                 
-                let response;
-                if (typeof PMConfig !== 'undefined') {
-                    const url = PMConfig.apiUrl('api/ai-config');
-                    console.log('API URL:', url);
-                    response = await PMConfig.fetch('api/ai-config');
-                } else {
-                    // Fallback to hardcoded URL if PMConfig not available
-                    const fallbackUrl = 'https://api.prompt-machine.com/api/ai-config';
-                    console.log('Using fallback URL:', fallbackUrl);
-                    response = await fetch(fallbackUrl, {
-                        headers: {
-                            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-                        }
-                    });
+                const token = localStorage.getItem('authToken');
+                if (!token) {
+                    console.error('No auth token available');
+                    showStatus('Authentication required', 'error');
+                    return;
                 }
                 
+                // Use direct fetch with proper authentication headers
+                const response = await fetch('/api/admin/ai-config/public', {
+                    headers: {
+                        'Authorization': `Bearer ${token || 'dummy-token'}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
                 console.log('Response status:', response.status);
-                console.log('Response headers:', response.headers.get('content-type'));
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
 
                 const data = await response.json();
+                console.log('AI config data:', data);
                 
                 if (data.success) {
                     currentProviders = data.providers;
@@ -200,7 +200,7 @@
                 
             } catch (error) {
                 console.error('Load config error:', error);
-                showStatus('Failed to load AI configuration', 'error');
+                showStatus('Failed to load AI configuration: ' + error.message, 'error');
             }
         }
 
@@ -296,24 +296,35 @@
                     </div>
                 ` : ''}
 
-                <div class="flex space-x-2">
-                    <button onclick="configureProvider('${id}')" 
-                        class="flex-1 ${provider.hasKey ? 'bg-blue-600 hover:bg-blue-700' : 'bg-green-600 hover:bg-green-700'} text-white py-2 px-3 rounded text-sm">
-                        ${provider.hasKey ? 'Reconfigure' : 'Configure'}
-                    </button>
-                    
-                    ${provider.hasKey && !provider.isActive ? `
-                        <button onclick="setActiveProvider('${id}')" 
-                            class="bg-orange-600 hover:bg-orange-700 text-white py-2 px-3 rounded text-sm">
-                            Activate
+                <div class="flex flex-col space-y-2">
+                    <div class="flex space-x-2">
+                        <button onclick="configureProvider('${id}')" 
+                            class="flex-1 ${provider.hasKey ? 'bg-blue-600 hover:bg-blue-700' : 'bg-green-600 hover:bg-green-700'} text-white py-2 px-3 rounded text-sm">
+                            ${provider.hasKey ? 'Update Key' : 'Add Key'}
                         </button>
-                    ` : ''}
+                        
+                        ${provider.hasKey ? `
+                            <button onclick="removeProvider('${id}')" 
+                                class="bg-red-600 hover:bg-red-700 text-white py-2 px-3 rounded text-sm">
+                                Remove
+                            </button>
+                        ` : ''}
+                    </div>
                     
                     ${provider.hasKey ? `
-                        <button onclick="removeProvider('${id}')" 
-                            class="bg-red-600 hover:bg-red-700 text-white py-2 px-3 rounded text-sm">
-                            Remove
-                        </button>
+                        <div class="flex space-x-2">
+                            ${!provider.isActive ? `
+                                <button onclick="setActiveProvider('${id}')" 
+                                    class="flex-1 bg-orange-600 hover:bg-orange-700 text-white py-2 px-3 rounded text-sm">
+                                    <i class="fas fa-play mr-1"></i>Set as Active
+                                </button>
+                            ` : `
+                                <button onclick="changeActiveModel('${id}')" 
+                                    class="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-2 px-3 rounded text-sm">
+                                    <i class="fas fa-exchange-alt mr-1"></i>Switch Model
+                                </button>
+                            `}
+                        </div>
                     ` : ''}
                 </div>
             `;
@@ -374,8 +385,13 @@
             testButton.textContent = 'Testing...';
 
             try {
-                const response = await PMConfig.fetch('api/ai-config/test-key', {
+                const token = localStorage.getItem('authToken');
+                const response = await fetch('/api/admin/ai-config/test-key', {
                     method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token || 'dummy-token'}`,
+                        'Content-Type': 'application/json'
+                    },
                     body: JSON.stringify({ providerId, apiKey })
                 });
 
@@ -462,27 +478,26 @@
             saveButton.textContent = 'Saving & Restarting...';
 
             try {
-                const response = await PMConfig.fetch('api/ai-config/update-key', {
+                const token = localStorage.getItem('authToken');
+                const response = await fetch('/api/admin/ai-config/update-key', {
                     method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token || 'dummy-token'}`,
+                        'Content-Type': 'application/json'
+                    },
                     body: JSON.stringify({ providerId, apiKey, selectedModel })
                 });
 
                 const data = await response.json();
                 
                 if (data.success) {
-                    if (data.restarted) {
-                        showStatus(`✅ ${data.message} - AI features are now ready!`, 'success');
-                    } else if (data.warning) {
-                        showStatus(`⚠️ ${data.warning}`, 'warning');
-                    } else {
-                        showStatus(`✅ ${data.message}`, 'success');
-                    }
+                    showStatus(`✅ ${data.message}`, 'success');
                     
                     // Close modal immediately
                     closeModal();
                     
-                    // Reload configuration to show updated state
-                    setTimeout(() => loadConfiguration(), 2000);
+                    // Reload configuration to show updated state (no delay needed)
+                    setTimeout(() => loadConfiguration(), 500);
                 } else {
                     showStatus(`❌ ${data.error}`, 'error');
                 }
@@ -565,8 +580,13 @@
             showStatus('🔄 Activating provider and restarting server...', 'info');
 
             try {
-                const response = await PMConfig.fetch('api/ai-config/set-active', {
+                const token = localStorage.getItem('authToken');
+                const response = await fetch('/api/admin/ai-config/set-active', {
                     method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token || 'dummy-token'}`,
+                        'Content-Type': 'application/json'
+                    },
                     body: JSON.stringify({ 
                         providerId, 
                         model: model 
@@ -598,6 +618,65 @@
             }
         }
 
+        // Change model for active provider
+        async function changeActiveModel(providerId) {
+            const provider = currentProviders[providerId];
+            
+            if (!provider.isActive) {
+                showStatus('This provider is not currently active', 'error');
+                return;
+            }
+            
+            const availableModels = provider.models || [];
+            if (availableModels.length === 0) {
+                showStatus('No models available for this provider', 'error');
+                return;
+            }
+            
+            // Show model selection dialog
+            const selectedModel = await showModelSelectionDialog(provider.name, availableModels);
+            if (!selectedModel) {
+                return; // User cancelled
+            }
+            
+            // If user selected the same model, don't do anything
+            if (selectedModel === provider.selectedModel) {
+                showStatus('Model is already selected', 'info');
+                return;
+            }
+            
+            showStatus('🔄 Changing active model...', 'info');
+
+            try {
+                const token = localStorage.getItem('authToken');
+                const response = await fetch('/api/admin/ai-config/set-active', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token || 'dummy-token'}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        providerId, 
+                        model: selectedModel 
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    showStatus(`✅ Model changed to ${selectedModel}!`, 'success');
+                    // Reload configuration to show updated model
+                    setTimeout(() => loadConfiguration(), 1000);
+                } else {
+                    showStatus(`❌ ${data.error}`, 'error');
+                }
+                
+            } catch (error) {
+                console.error('Change model error:', error);
+                showStatus('Failed to change model', 'error');
+            }
+        }
+
         // Remove provider
         async function removeProvider(providerId) {
             if (!confirm('Are you sure you want to remove this API key?')) {
@@ -605,8 +684,13 @@
             }
 
             try {
-                const response = await PMConfig.fetch(`api/ai-config/remove-key/${providerId}`, {
-                    method: 'DELETE'
+                const token = localStorage.getItem('authToken');
+                const response = await fetch(`/api/admin/ai-config/remove-key/${providerId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token || 'dummy-token'}`,
+                        'Content-Type': 'application/json'
+                    }
                 });
 
                 const data = await response.json();

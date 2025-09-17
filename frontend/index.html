@@ -3,11 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Prompt Machine v1.0.0-rc - Admin Dashboard</title>
+    <title>Prompt Machine v1.5.0rc - AI Tool Builder Platform</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <script src="js/config.js"></script>
-    <script src="js/dashboard-v2.js"></script>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     
     <script>
         tailwind.config = {
@@ -16,10 +18,15 @@
                     colors: {
                         primary: {
                             50: '#f0f9ff',
-                            500: '#3b82f6',
-                            600: '#2563eb',
-                            700: '#1d4ed8',
-                            900: '#1e3a8a'
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e'
                         },
                         purple: {
                             500: '#8b5cf6',
@@ -29,575 +36,324 @@
                     },
                     fontFamily: {
                         'sans': ['Inter', 'system-ui', 'sans-serif']
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-in-out',
+                        'slide-up': 'slideUp 0.6s ease-out',
+                        'bounce-gentle': 'bounceGentle 2s infinite'
                     }
                 }
             }
         }
     </script>
     
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
     <style>
-        body.loading #loginScreen,
-        body.loading #dashboardScreen {
-            display: none !important;
-        }
-        body.loading::before {
-            content: '';
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 40px;
-            height: 40px;
-            border: 3px solid #e5e7eb;
-            border-top-color: #3b82f6;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            to { transform: translate(-50%, -50%) rotate(360deg); }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
         
-        /* Custom button animations */
-        .btn-primary {
-            @apply bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98];
-        }
-        .btn-secondary {
-            @apply bg-white hover:bg-gray-50 text-gray-700 font-medium px-4 py-2 rounded-lg border border-gray-300 shadow-sm hover:shadow-md transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98];
-        }
-        .btn-danger {
-            @apply bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-medium px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98];
-        }
-        .btn-success {
-            @apply bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-medium px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98];
+        @keyframes slideUp {
+            from { 
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to { 
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
         
-        /* Card hover effects */
-        .card-hover {
-            @apply transition-all duration-300 hover:shadow-xl hover:scale-[1.02] hover:-translate-y-1;
+        @keyframes bounceGentle {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
         }
         
-        /* Mobile menu animation */
-        .mobile-menu-enter {
-            animation: slideIn 0.3s ease-out forwards;
-        }
-        .mobile-menu-exit {
-            animation: slideOut 0.3s ease-out forwards;
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
         
-        @keyframes slideIn {
-            from { transform: translateX(-100%); }
-            to { transform: translateX(0); }
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
-        @keyframes slideOut {
-            from { transform: translateX(0); }
-            to { transform: translateX(-100%); }
+        
+        .nav-item:hover {
+            transform: translateY(-2px);
+            transition: all 0.3s ease;
         }
     </style>
 </head>
+<body class="font-sans bg-gray-50">
 
-<body class="bg-gray-50 min-h-screen loading font-sans">
-    <!-- Login Screen -->
-    <div id="loginScreen" class="min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8">
-        <div class="max-w-md w-full space-y-8">
-            <div class="text-center">
-                <div class="mx-auto h-20 w-20 bg-gradient-to-br from-blue-600 to-purple-700 rounded-2xl flex items-center justify-center mb-6 shadow-lg">
-                    <i class="fas fa-robot text-2xl text-white"></i>
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg border-b border-gray-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo -->
+                <div class="flex items-center">
+                    <a href="/" class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-magic text-white text-lg"></i>
+                        </div>
+                        <div>
+                            <h1 class="text-xl font-bold text-gray-900">Prompt Machine</h1>
+                            <p class="text-xs text-gray-500">v1.5.0rc</p>
+                        </div>
+                    </a>
                 </div>
-                <h1 class="text-3xl font-bold text-gray-900 mb-2">Prompt Machine</h1>
-                <div class="inline-flex items-center px-3 py-1 rounded-full bg-blue-100 text-blue-800 text-sm font-medium mb-6">
-                    <span class="w-2 h-2 bg-blue-400 rounded-full mr-2 animate-pulse"></span>
-                    v1.0.0-rc
+                
+                <!-- Desktop Navigation -->
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="/" class="nav-item text-gray-700 hover:text-blue-600 font-medium">Home</a>
+                    <a href="/tools-directory.html" class="nav-item text-gray-700 hover:text-blue-600 font-medium">Tools Directory</a>
+                    <a href="/early-access.html" class="nav-item text-gray-700 hover:text-blue-600 font-medium">Early Access</a>
+                    <a href="/login.html" class="nav-item bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors">
+                        Login
+                    </a>
                 </div>
-                <p class="text-gray-600">Admin Dashboard</p>
+                
+                <!-- Mobile menu button -->
+                <div class="md:hidden">
+                    <button id="mobile-menu-button" class="text-gray-700 hover:text-blue-600">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mobile Navigation -->
+        <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-gray-200">
+            <div class="px-2 pt-2 pb-3 space-y-1">
+                <a href="/" class="block px-3 py-2 text-gray-700 hover:text-blue-600 font-medium">Home</a>
+                <a href="/tools-directory.html" class="block px-3 py-2 text-gray-700 hover:text-blue-600 font-medium">Tools Directory</a>
+                <a href="/early-access.html" class="block px-3 py-2 text-gray-700 hover:text-blue-600 font-medium">Early Access</a>
+                <a href="/login.html" class="block px-3 py-2 bg-blue-600 text-white rounded-lg font-medium mx-3">Login</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="gradient-bg text-white py-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center animate-fade-in">
+                <h1 class="text-4xl md:text-6xl font-bold mb-6 animate-slide-up">
+                    Build AI Tools
+                    <span class="block bg-gradient-to-r from-yellow-300 to-orange-300 bg-clip-text text-transparent">
+                        Without Code
+                    </span>
+                </h1>
+                <p class="text-xl md:text-2xl mb-8 text-blue-100 max-w-3xl mx-auto animate-slide-up">
+                    Transform your ideas into powerful AI tools with our intuitive platform. 
+                    Create, customize, and deploy intelligent applications in minutes, not months.
+                </p>
+                <div class="flex flex-col sm:flex-row gap-4 justify-center animate-slide-up">
+                    <a href="/early-access.html" class="bg-white text-blue-600 px-8 py-4 rounded-xl font-semibold text-lg hover:bg-blue-50 transition-colors shadow-lg">
+                        Get Early Access
+                    </a>
+                    <a href="/tools-directory.html" class="glass-effect text-white px-8 py-4 rounded-xl font-semibold text-lg hover:bg-white hover:bg-opacity-20 transition-colors">
+                        Explore Tools
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="py-20 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                    Why Choose Prompt Machine?
+                </h2>
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                    Our platform makes AI tool creation accessible to everyone, from entrepreneurs to enterprises.
+                </p>
             </div>
             
-            <div class="bg-white py-8 px-6 shadow-xl rounded-2xl border border-gray-100">
-                <form id="loginForm" class="space-y-6">
-                    <div>
-                        <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
-                            Email Address
-                        </label>
-                        <div class="relative">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <i class="fas fa-envelope text-gray-400"></i>
-                            </div>
-                            <input
-                                type="email"
-                                id="email"
-                                required
-                                class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                                placeholder="admin@prompt-machine.com"
-                                value="admin@prompt-machine.com"
-                            >
-                        </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- Feature 1 -->
+                <div class="bg-gray-50 rounded-2xl p-8 hover:shadow-lg transition-shadow">
+                    <div class="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mb-6 animate-bounce-gentle">
+                        <i class="fas fa-rocket text-blue-600 text-2xl"></i>
                     </div>
-                    
-                    <div>
-                        <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
-                            Password
-                        </label>
-                        <div class="relative">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <i class="fas fa-lock text-gray-400"></i>
-                            </div>
-                            <input
-                                type="password"
-                                id="password"
-                                required
-                                class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                                placeholder="Enter your password"
-                                value="admin123"
-                            >
-                        </div>
-                    </div>
-                    
-                    <div>
-                        <button type="submit" class="btn-primary w-full py-3 text-base">
-                            <span id="loginButtonText">Sign in to Dashboard</span>
-                            <span id="loginLoading" class="hidden">
-                                <i class="fas fa-spinner fa-spin mr-2"></i>
-                                Signing in...
-                            </span>
-                        </button>
-                    </div>
-                </form>
+                    <h3 class="text-xl font-semibold text-gray-900 mb-4">Launch Fast</h3>
+                    <p class="text-gray-600">
+                        Deploy your AI tools instantly with our one-click deployment system. 
+                        From idea to live tool in minutes.
+                    </p>
+                </div>
                 
-                <div id="loginError" class="hidden mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-                    <div class="flex">
-                        <i class="fas fa-exclamation-triangle text-red-400 mr-2 mt-0.5"></i>
-                        <p class="text-sm text-red-700" id="loginErrorText"></p>
+                <!-- Feature 2 -->
+                <div class="bg-gray-50 rounded-2xl p-8 hover:shadow-lg transition-shadow">
+                    <div class="w-16 h-16 bg-purple-100 rounded-2xl flex items-center justify-center mb-6 animate-bounce-gentle" style="animation-delay: 0.2s;">
+                        <i class="fas fa-palette text-purple-600 text-2xl"></i>
                     </div>
+                    <h3 class="text-xl font-semibold text-gray-900 mb-4">Full Customization</h3>
+                    <p class="text-gray-600">
+                        Design exactly what you need with our flexible form builder, 
+                        custom AI personas, and advanced prompt engineering.
+                    </p>
+                </div>
+                
+                <!-- Feature 3 -->
+                <div class="bg-gray-50 rounded-2xl p-8 hover:shadow-lg transition-shadow">
+                    <div class="w-16 h-16 bg-green-100 rounded-2xl flex items-center justify-center mb-6 animate-bounce-gentle" style="animation-delay: 0.4s;">
+                        <i class="fas fa-chart-line text-green-600 text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-900 mb-4">Analytics & Insights</h3>
+                    <p class="text-gray-600">
+                        Track usage, monitor performance, and optimize your tools with 
+                        detailed analytics and real-time insights.
+                    </p>
                 </div>
             </div>
         </div>
-    </div>
+    </section>
 
-    <!-- Dashboard Screen -->
-    <div id="dashboardScreen" class="hidden min-h-screen bg-gray-50">
-        <!-- Navigation -->
-        <nav class="bg-white border-b border-gray-200 sticky top-0 z-40 backdrop-blur-sm">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex justify-between items-center h-16">
-                    <!-- Logo and Brand -->
-                    <div class="flex items-center">
-                        <div class="flex items-center space-x-3">
-                            <div class="h-10 w-10 bg-gradient-to-br from-blue-600 to-purple-700 rounded-xl flex items-center justify-center">
-                                <i class="fas fa-robot text-white text-lg"></i>
-                            </div>
-                            <div class="hidden sm:block">
-                                <h1 class="text-xl font-bold text-gray-900">Prompt Machine</h1>
-                                <div class="text-xs text-blue-600 font-medium">v1.0.0-rc</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Desktop Navigation -->
-                    <div class="hidden md:flex items-center space-x-2">
-                        <button onclick="openAnalyticsDashboard()" class="flex items-center px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 transition-colors">
-                            <i class="fas fa-chart-bar mr-2"></i>
-                            Analytics
-                        </button>
-                        <button onclick="openAIConfig()" class="flex items-center px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 transition-colors">
-                            <i class="fas fa-robot mr-2"></i>
-                            AI Config
-                        </button>
-                        <button onclick="openAdvertisingSettings()" class="flex items-center px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 transition-colors">
-                            <i class="fas fa-dollar-sign mr-2"></i>
-                            Advertising
-                        </button>
-                        
-                        <!-- User Menu -->
-                        <div class="relative ml-4">
-                            <button onclick="toggleUserMenu()" class="flex items-center px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 transition-colors">
-                                <div class="w-8 h-8 bg-gray-300 rounded-full mr-2 flex items-center justify-center">
-                                    <i class="fas fa-user text-gray-600 text-sm"></i>
-                                </div>
-                                <span id="userEmail" class="hidden sm:block"></span>
-                                <i class="fas fa-chevron-down ml-2"></i>
-                            </button>
-                            
-                            <div id="userDropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
-                                <button onclick="logout()" class="w-full flex items-center px-4 py-2 text-sm text-red-700 hover:bg-red-50 transition-colors">
-                                    <i class="fas fa-sign-out-alt mr-2"></i>
-                                    Sign out
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Mobile menu button -->
-                    <button onclick="toggleMobileMenu()" class="md:hidden p-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors">
-                        <i id="mobileMenuIcon" class="fas fa-bars text-xl"></i>
-                    </button>
-                </div>
+    <!-- How It Works -->
+    <section class="py-20 bg-gray-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                    How It Works
+                </h2>
+                <p class="text-xl text-gray-600">
+                    Three simple steps to create your AI-powered tool
+                </p>
             </div>
-        </nav>
-
-        <!-- Mobile Navigation -->
-        <div id="mobileMenu" class="hidden md:hidden fixed inset-0 z-50 bg-black bg-opacity-50">
-            <div class="fixed inset-y-0 left-0 w-64 bg-white shadow-xl">
-                <div class="flex items-center justify-between p-4 border-b border-gray-200">
-                    <div class="flex items-center space-x-3">
-                        <div class="h-8 w-8 bg-gradient-to-br from-blue-600 to-purple-700 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-robot text-white text-sm"></i>
-                        </div>
-                        <div>
-                            <div class="font-bold text-gray-900">Prompt Machine</div>
-                            <div class="text-xs text-blue-600">v1.0.0-rc</div>
-                        </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- Step 1 -->
+                <div class="text-center">
+                    <div class="w-20 h-20 bg-blue-600 text-white rounded-full flex items-center justify-center mx-auto mb-6 text-2xl font-bold">
+                        1
                     </div>
-                    <button onclick="toggleMobileMenu()" class="p-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100">
-                        <i class="fas fa-times"></i>
-                    </button>
+                    <h3 class="text-xl font-semibold text-gray-900 mb-4">Design Your Tool</h3>
+                    <p class="text-gray-600">
+                        Use our intuitive interface to create forms, define AI behavior, 
+                        and set up your tool's functionality.
+                    </p>
                 </div>
                 
-                <nav class="p-4 space-y-2">
-                    <button onclick="openAnalyticsDashboard(); toggleMobileMenu()" class="w-full flex items-center px-3 py-3 rounded-lg text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 transition-colors">
-                        <i class="fas fa-chart-bar mr-3"></i>
-                        Analytics
-                    </button>
-                    <button onclick="openAIConfig(); toggleMobileMenu()" class="w-full flex items-center px-3 py-3 rounded-lg text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 transition-colors">
-                        <i class="fas fa-robot mr-3"></i>
-                        AI Config
-                    </button>
-                    <button onclick="openAdvertisingSettings(); toggleMobileMenu()" class="w-full flex items-center px-3 py-3 rounded-lg text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 transition-colors">
-                        <i class="fas fa-dollar-sign mr-3"></i>
-                        Advertising
-                    </button>
-                    
-                    <div class="border-t border-gray-200 pt-4 mt-4">
-                        <div class="flex items-center px-3 py-2 mb-2">
-                            <div class="w-8 h-8 bg-gray-300 rounded-full mr-3 flex items-center justify-center">
-                                <i class="fas fa-user text-gray-600 text-sm"></i>
-                            </div>
-                            <span id="userEmailMobile" class="text-sm text-gray-600"></span>
-                        </div>
-                        <button onclick="logout()" class="w-full flex items-center px-3 py-3 rounded-lg text-sm font-medium text-red-700 hover:bg-red-50 transition-colors">
-                            <i class="fas fa-sign-out-alt mr-3"></i>
-                            Sign out
-                        </button>
+                <!-- Step 2 -->
+                <div class="text-center">
+                    <div class="w-20 h-20 bg-purple-600 text-white rounded-full flex items-center justify-center mx-auto mb-6 text-2xl font-bold">
+                        2
                     </div>
-                </nav>
+                    <h3 class="text-xl font-semibold text-gray-900 mb-4">Customize & Test</h3>
+                    <p class="text-gray-600">
+                        Fine-tune your AI prompts, customize the interface, 
+                        and test everything before going live.
+                    </p>
+                </div>
+                
+                <!-- Step 3 -->
+                <div class="text-center">
+                    <div class="w-20 h-20 bg-green-600 text-white rounded-full flex items-center justify-center mx-auto mb-6 text-2xl font-bold">
+                        3
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-900 mb-4">Deploy & Share</h3>
+                    <p class="text-gray-600">
+                        Launch your tool with a custom URL and start sharing it with your audience. 
+                        Monitor usage and iterate.
+                    </p>
+                </div>
             </div>
         </div>
+    </section>
 
-        <!-- Main Content -->
-        <main class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-            <!-- Header Section -->
-            <div class="mb-8">
-                <div class="sm:flex sm:items-center sm:justify-between">
-                    <div>
-                        <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Dashboard</h2>
-                        <p class="text-gray-600">Manage your AI-powered tools and projects</p>
-                    </div>
-                    <div class="mt-4 sm:mt-0 flex flex-col sm:flex-row gap-3">
-                        <button onclick="createNewToolV6()" class="btn-primary inline-flex items-center justify-center">
-                            <i class="fas fa-plus mr-2"></i>
-                            Create Project
-                        </button>
-                    </div>
-                </div>
+    <!-- CTA Section -->
+    <section class="py-20 bg-blue-600 text-white">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h2 class="text-3xl md:text-4xl font-bold mb-6">
+                Ready to Build Your First AI Tool?
+            </h2>
+            <p class="text-xl mb-8 text-blue-100">
+                Join thousands of creators who are building the future with AI
+            </p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <a href="/early-access.html" class="bg-white text-blue-600 px-8 py-4 rounded-xl font-semibold text-lg hover:bg-blue-50 transition-colors">
+                    Get Early Access
+                </a>
+                <a href="/tools-directory.html" class="bg-blue-700 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:bg-blue-800 transition-colors">
+                    Browse Tools
+                </a>
             </div>
+        </div>
+    </section>
 
-            <!-- Quick Stats -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0">
-                            <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                                <i class="fas fa-project-diagram text-blue-600 text-lg"></i>
-                            </div>
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div class="md:col-span-2">
+                    <div class="flex items-center space-x-3 mb-4">
+                        <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-magic text-white text-sm"></i>
                         </div>
-                        <div class="ml-4">
-                            <p class="text-sm font-medium text-gray-600">Total Projects</p>
-                            <p id="totalProjects" class="text-2xl font-bold text-gray-900">-</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0">
-                            <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
-                                <i class="fas fa-globe text-green-600 text-lg"></i>
-                            </div>
-                        </div>
-                        <div class="ml-4">
-                            <p class="text-sm font-medium text-gray-600">Live Tools</p>
-                            <p id="liveTools" class="text-2xl font-bold text-gray-900">-</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0">
-                            <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
-                                <i class="fas fa-eye text-purple-600 text-lg"></i>
-                            </div>
-                        </div>
-                        <div class="ml-4">
-                            <p class="text-sm font-medium text-gray-600">Total Views</p>
-                            <p id="totalViews" class="text-2xl font-bold text-gray-900">-</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0">
-                            <div class="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center">
-                                <i class="fas fa-dollar-sign text-yellow-600 text-lg"></i>
-                            </div>
-                        </div>
-                        <div class="ml-4">
-                            <p class="text-sm font-medium text-gray-600">Revenue</p>
-                            <p id="totalRevenue" class="text-2xl font-bold text-gray-900">-</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Projects Section -->
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-100">
-                <div class="px-6 py-4 border-b border-gray-200">
-                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                         <div>
-                            <h3 class="text-lg font-semibold text-gray-900">Multi-Step Projects</h3>
-                            <p class="text-sm text-gray-600 mt-1">AI-powered project builder with custom workflows</p>
-                        </div>
-                        <div class="mt-3 sm:mt-0 flex items-center space-x-3">
-                            <div class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                                <span class="w-2 h-2 bg-purple-600 rounded-full mr-1.5 animate-pulse"></span>
-                                v6 System
-                            </div>
+                            <h3 class="text-lg font-bold">Prompt Machine</h3>
+                            <p class="text-xs text-gray-400">v1.5.0rc</p>
                         </div>
                     </div>
+                    <p class="text-gray-400 mb-4">
+                        Empowering creators to build AI tools without code. 
+                        Transform your ideas into powerful applications.
+                    </p>
                 </div>
                 
-                <div id="projectsListV6" class="p-6">
-                    <div class="flex items-center justify-center py-12">
-                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                        <span class="ml-3 text-gray-600">Loading projects...</span>
-                    </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Platform</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="/tools-directory.html" class="hover:text-white transition-colors">Tools Directory</a></li>
+                        <li><a href="/early-access.html" class="hover:text-white transition-colors">Early Access</a></li>
+                        <li><a href="/login.html" class="hover:text-white transition-colors">Login</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="font-semibold mb-4">Support</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="#" class="hover:text-white transition-colors">Documentation</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Help Center</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Contact Us</a></li>
+                    </ul>
                 </div>
             </div>
-        </main>
-    </div>
-
-    <!-- Toast Notifications -->
-    <div id="toastContainer" class="fixed bottom-4 right-4 z-50 space-y-2"></div>
+            
+            <div class="border-t border-gray-800 pt-8 mt-8 text-center text-gray-400">
+                <p>&copy; 2025 Prompt Machine. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
 
     <script>
-        // Global variables
-        let authToken = localStorage.getItem('authToken');
-        let currentUser = null;
-        let projectsV6 = [];
-
-        // Initialize app
-        document.addEventListener('DOMContentLoaded', function() {
-            if (authToken) {
-                validateToken();
-            } else {
-                showLogin();
-            }
+        // Mobile menu toggle
+        document.getElementById('mobile-menu-button').addEventListener('click', function() {
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileMenu.classList.toggle('hidden');
         });
 
-        // Authentication functions
-        function showLogin() {
-            document.body.classList.remove('loading');
-            document.getElementById('loginScreen').classList.remove('hidden');
-            document.getElementById('dashboardScreen').classList.add('hidden');
-        }
-
-        function showDashboard() {
-            document.body.classList.remove('loading');
-            document.getElementById('loginScreen').classList.add('hidden');
-            document.getElementById('dashboardScreen').classList.remove('hidden');
-            document.getElementById('userEmail').textContent = currentUser?.email || '';
-            document.getElementById('userEmailMobile').textContent = currentUser?.email || '';
-            
-            loadDashboardData();
-        }
-
-        async function validateToken() {
-            try {
-                const response = await PMConfig.fetch('api/auth/validate', {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${authToken}`
-                    }
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    currentUser = data.user;
-                    showDashboard();
-                } else {
-                    localStorage.removeItem('authToken');
-                    authToken = null;
-                    showLogin();
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth'
+                    });
                 }
-            } catch (error) {
-                console.error('Token validation error:', error);
-                showLogin();
-            }
-        }
-
-        // Login form handler
-        document.getElementById('loginForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const loginError = document.getElementById('loginError');
-            const loginButtonText = document.getElementById('loginButtonText');
-            const loginLoading = document.getElementById('loginLoading');
-
-            try {
-                loginButtonText.classList.add('hidden');
-                loginLoading.classList.remove('hidden');
-                loginError.classList.add('hidden');
-
-                const response = await PMConfig.fetch('api/auth/login', {
-                    method: 'POST',
-                    body: JSON.stringify({ email, password })
-                });
-
-                const data = await response.json();
-
-                if (response.ok && data.success) {
-                    localStorage.setItem('authToken', data.token);
-                    authToken = data.token;
-                    currentUser = data.user;
-                    showDashboard();
-                } else {
-                    document.getElementById('loginErrorText').textContent = data.error || 'Login failed';
-                    loginError.classList.remove('hidden');
-                }
-            } catch (error) {
-                console.error('Login error:', error);
-                document.getElementById('loginErrorText').textContent = 'Connection error. Please try again.';
-                loginError.classList.remove('hidden');
-            } finally {
-                loginButtonText.classList.remove('hidden');
-                loginLoading.classList.add('hidden');
-            }
-        });
-
-        // Navigation functions
-        function toggleUserMenu() {
-            const dropdown = document.getElementById('userDropdown');
-            dropdown.classList.toggle('hidden');
-        }
-
-        function toggleMobileMenu() {
-            const mobileMenu = document.getElementById('mobileMenu');
-            const mobileMenuIcon = document.getElementById('mobileMenuIcon');
-            
-            if (mobileMenu.classList.contains('hidden')) {
-                mobileMenu.classList.remove('hidden');
-                mobileMenuIcon.className = 'fas fa-times text-xl';
-            } else {
-                mobileMenu.classList.add('hidden');
-                mobileMenuIcon.className = 'fas fa-bars text-xl';
-            }
-        }
-
-        // Close dropdowns when clicking outside
-        document.addEventListener('click', function(e) {
-            if (!e.target.closest('.relative')) {
-                document.getElementById('userDropdown').classList.add('hidden');
-            }
-            if (!e.target.closest('#mobileMenu') && !e.target.closest('[onclick*="toggleMobileMenu"]')) {
-                document.getElementById('mobileMenu').classList.add('hidden');
-                document.getElementById('mobileMenuIcon').className = 'fas fa-bars text-xl';
-            }
-        });
-
-        function logout() {
-            localStorage.removeItem('authToken');
-            authToken = null;
-            currentUser = null;
-            showLogin();
-        }
-
-        function openAnalyticsDashboard() {
-            window.location.href = '/analytics-dashboard.html';
-        }
-
-        function openAIConfig() {
-            window.location.href = '/ai-config.html';
-        }
-
-        function openAdvertisingSettings() {
-            window.location.href = '/advertising-settings.html';
-        }
-
-        function createNewToolV6() {
-            window.location.href = '/prompt-engineer-v6.html';
-        }
-
-        // Dashboard data loading
-        async function loadDashboardData() {
-            await dashboard.loadProjectsV6();
-        }
-
-        // Toast notification system
-        function showToast(message, type = 'info') {
-            const toast = document.createElement('div');
-            const colors = {
-                success: 'bg-green-500',
-                error: 'bg-red-500',
-                warning: 'bg-yellow-500',
-                info: 'bg-blue-500'
-            };
-            
-            toast.className = `${colors[type]} text-white px-6 py-4 rounded-lg shadow-lg transform translate-x-full transition-all duration-300 max-w-sm`;
-            toast.innerHTML = `
-                <div class="flex items-center">
-                    <span class="flex-1">${message}</span>
-                    <button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-white hover:text-gray-200">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-            `;
-            
-            document.getElementById('toastContainer').appendChild(toast);
-            
-            // Animate in
-            setTimeout(() => {
-                toast.classList.remove('translate-x-full');
-                toast.classList.add('translate-x-0');
-            }, 100);
-            
-            // Auto remove after 5 seconds
-            setTimeout(() => {
-                if (toast.parentNode) {
-                    toast.classList.add('translate-x-full');
-                    setTimeout(() => toast.remove(), 300);
-                }
-            }, 5000);
-        }
-
-        // Utility functions
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
-        function formatDate(dateString) {
-            return new Date(dateString).toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric'
             });
-        }
+        });
+
+        // Add loading animation
+        window.addEventListener('load', function() {
+            document.body.classList.add('loaded');
+        });
     </script>
+
 </body>
 </html>
