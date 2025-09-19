@@ -78,8 +78,7 @@ const publicToolsRoutes = require('./routes/publicTools');
 const aiConfigRoutes = require('./routes/ai-config');
 // V1 and V2 tool creators removed - see V3 and V4 for current implementations
 const toolsV3Routes = require('./routes/toolsV3');
-const promptEngineerV4Routes = require('./routes/promptEngineerV4');
-const promptEngineerV5Routes = require('./routes/promptEngineerV5');
+// V4 and V5 routes removed in v1.5.0rc - now using V6 only
 const promptEngineerV6Routes = require('./routes/promptEngineerV6');
 const advertisingRoutes = require('./routes/advertising');
 const analyticsRoutes = require('./routes/analytics_enhanced');
@@ -99,9 +98,7 @@ app.use('/api/tools', toolGenerationRateLimit, publicToolsRoutes); // PUBLIC too
 app.use('/api/ai-config', aiConfigRoutes);
 app.use('/api/advertising', advertisingRoutes); // Advertising management
 app.use('/api/v3', toolsV3Routes); // Production v3 wizard system (reference)
-app.use('/api/v4', promptEngineerV4Routes); // Prompt Engineer v4 - AI-guided tool creation
-app.use('/api/v5/prompt-engineer', promptEngineerV5Routes); // Prompt Engineer v5 - Field recommendation engine
-app.use('/api/v5', promptEngineerV5Routes); // V5 tools management endpoints
+// V4 and V5 API routes removed in v1.5.0rc - all functionality moved to V6
 app.use('/api/v6', toolGenerationRateLimit, promptEngineerV6Routes); // V6 multi-step project builder system
 app.use('/api/analytics', analyticsRateLimit, analyticsRoutes); // Analytics and usage tracking
 app.use('/api/users', userManagerRoutes); // User management and permissions

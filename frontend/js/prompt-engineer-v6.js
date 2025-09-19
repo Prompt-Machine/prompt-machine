@@ -402,8 +402,9 @@ class PromptEngineerV6_1_0rc {
     }
 
     async askMoreQuestions() {
-        // Collect current answers
+        // Collect current answers and preserve existing field selections
         this.collectRefinementAnswers();
+        this.preserveFieldSelections();
         
         const askBtn = document.getElementById('ask-more-questions');
         const askText = askBtn.querySelector('.ask-more-text');
@@ -417,7 +418,8 @@ class PromptEngineerV6_1_0rc {
             const response = await PMConfig.fetch('api/v6/projects/more-questions', {
                 method: 'POST',
                 body: JSON.stringify({
-                    ...this.creationData
+                    ...this.creationData,
+                    existingSelections: this.getSelectedFields()
                 })
             });
             
@@ -438,6 +440,34 @@ class PromptEngineerV6_1_0rc {
         }
     }
 
+    preserveFieldSelections() {
+        // Store current field selections before asking for more questions
+        if (this.creationData.generatedSteps) {
+            this.creationData.previousSelections = this.getSelectedFields();
+        }
+    }
+
+    getSelectedFields() {
+        if (!this.creationData.generatedSteps) return [];
+        
+        const selectedFields = [];
+        this.creationData.generatedSteps.forEach((step, stepIndex) => {
+            step.fields.forEach((field, fieldIndex) => {
+                if (field.selected !== false) {
+                    selectedFields.push({
+                        stepIndex,
+                        fieldIndex,
+                        stepName: step.name,
+                        fieldLabel: field.label,
+                        fieldType: field.type,
+                        selected: true
+                    });
+                }
+            });
+        });
+        return selectedFields;
+    }
+
     collectRefinementAnswers() {
         const questions = document.querySelectorAll('#refinement-questions textarea');
         this.creationData.refinementAnswers = Array.from(questions).map(textarea => ({
@@ -447,8 +477,9 @@ class PromptEngineerV6_1_0rc {
     }
 
     async createFields() {
-        // Collect current answers
+        // Collect current answers and preserve existing selections
         this.collectRefinementAnswers();
+        this.preserveFieldSelections();
         
         const createBtn = document.getElementById('create-fields');
         const createText = createBtn.querySelector('.create-fields-text');
@@ -462,13 +493,16 @@ class PromptEngineerV6_1_0rc {
             const response = await PMConfig.fetch('api/v6/projects/generate-fields', {
                 method: 'POST',
                 body: JSON.stringify({
-                    ...this.creationData
+                    ...this.creationData,
+                    existingSelections: this.getSelectedFields()
                 })
             });
             
             const data = await response.json();
             
             if (data.success) {
+                // Restore previous selections on new fields
+                this.restoreFieldSelections(data.steps);
                 this.displayGeneratedFields(data.fields, data.steps);
                 this.showCreationStep(3);
             } else {
@@ -484,19 +518,44 @@ class PromptEngineerV6_1_0rc {
         }
     }
 
+    restoreFieldSelections(newSteps) {
+        if (!this.creationData.previousSelections) return;
+        
+        // Match previous selections to new fields by label and type
+        this.creationData.previousSelections.forEach(prevSelection => {
+            newSteps.forEach(step => {
+                step.fields.forEach(field => {
+                    if (field.label === prevSelection.fieldLabel && 
+                        field.type === prevSelection.fieldType) {
+                        field.selected = true;
+                    }
+                });
+            });
+        });
+    }
+
     displayGeneratedFields(fields, steps) {
         const container = document.getElementById('generated-fields');
         container.innerHTML = steps.map((step, stepIndex) => `
             <div class="border rounded-lg p-4">
-                <h4 class="font-semibold text-gray-900 mb-3">${step.name}</h4>
+                <div class="flex justify-between items-center mb-3">
+                    <h4 class="font-semibold text-gray-900">${step.name}</h4>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="promptEngineer.selectAllFields(${stepIndex})" class="text-xs text-blue-600 hover:text-blue-800">Select All</button>
+                        <button onclick="promptEngineer.deselectAllFields(${stepIndex})" class="text-xs text-gray-600 hover:text-gray-800">Deselect All</button>
+                    </div>
+                </div>
                 <div class="space-y-3">
                     ${step.fields.map((field, fieldIndex) => `
-                        <div class="bg-gray-50 rounded p-3 flex items-start space-x-3 field-item" draggable="true" 
-                             data-step-index="${stepIndex}" data-field-index="${fieldIndex}"
-                             ondragstart="promptEngineer.handleFieldDragStart(event)"
-                             ondragover="promptEngineer.handleFieldDragOver(event)"
-                             ondrop="promptEngineer.handleFieldDrop(event)"
-                             ondragend="promptEngineer.handleFieldDragEnd(event)">
+                        <div class="bg-gray-50 rounded p-3 flex items-start space-x-3 field-item ${field.selected !== false ? 'border-2 border-blue-200' : 'border border-gray-200'}" 
+                             data-step-index="${stepIndex}" data-field-index="${fieldIndex}">
+                            <div class="flex items-center">
+                                <input type="checkbox" 
+                                       id="field-${stepIndex}-${fieldIndex}" 
+                                       ${field.selected !== false ? 'checked' : ''}
+                                       onchange="promptEngineer.toggleFieldSelection(${stepIndex}, ${fieldIndex})"
+                                       class="rounded text-blue-600 focus:ring-blue-500">
+                            </div>
                             <div class="drag-handle cursor-move text-gray-400 hover:text-gray-600 mt-1" title="Drag to reorder">
                                 <i class="fas fa-grip-vertical"></i>
                             </div>
@@ -504,6 +563,7 @@ class PromptEngineerV6_1_0rc {
                                 <div class="font-medium">${field.label}</div>
                                 <div class="text-sm text-gray-600">${field.type} ${field.required ? '(required)' : '(optional)'}</div>
                                 ${field.options ? `<div class="text-xs text-blue-600 mt-1">${field.options.length} options available</div>` : ''}
+                                ${field.description ? `<div class="text-xs text-gray-500 mt-1">${field.description}</div>` : ''}
                             </div>
                             <div class="flex space-x-2">
                                 <button onclick="promptEngineer.editField(${stepIndex}, ${fieldIndex})" class="text-blue-600 hover:text-blue-800 text-sm">Edit</button>
@@ -519,6 +579,51 @@ class PromptEngineerV6_1_0rc {
         this.creationData.generatedSteps = steps;
     }
 
+    toggleFieldSelection(stepIndex, fieldIndex) {
+        const field = this.creationData.generatedSteps[stepIndex].fields[fieldIndex];
+        field.selected = !field.selected;
+        
+        // Update visual indicator
+        const fieldElement = document.querySelector(`[data-step-index="${stepIndex}"][data-field-index="${fieldIndex}"]`);
+        if (field.selected) {
+            fieldElement.classList.remove('border-gray-200');
+            fieldElement.classList.add('border-2', 'border-blue-200');
+        } else {
+            fieldElement.classList.remove('border-2', 'border-blue-200');
+            fieldElement.classList.add('border', 'border-gray-200');
+        }
+        
+        this.updateFieldCount();
+    }
+
+    selectAllFields(stepIndex) {
+        this.creationData.generatedSteps[stepIndex].fields.forEach(field => {
+            field.selected = true;
+        });
+        this.displayGeneratedFields(null, this.creationData.generatedSteps);
+        this.updateFieldCount();
+    }
+
+    deselectAllFields(stepIndex) {
+        this.creationData.generatedSteps[stepIndex].fields.forEach(field => {
+            field.selected = false;
+        });
+        this.displayGeneratedFields(null, this.creationData.generatedSteps);
+        this.updateFieldCount();
+    }
+
+    updateFieldCount() {
+        const totalFields = this.creationData.generatedSteps.reduce((total, step) => {
+            return total + step.fields.filter(field => field.selected !== false).length;
+        }, 0);
+        
+        // Update any field count displays
+        const fieldCountElement = document.getElementById('selected-field-count');
+        if (fieldCountElement) {
+            fieldCountElement.textContent = totalFields;
+        }
+    }
+
     async finalizeProject() {
         const finalizeBtn = document.getElementById('finalize-project');
         const finalizeText = finalizeBtn.querySelector('.finalize-text');
@@ -529,10 +634,22 @@ class PromptEngineerV6_1_0rc {
             finalizeText.classList.add('hidden');
             loadingText.classList.remove('hidden');
             
+            // Filter to only include selected fields
+            const selectedSteps = this.creationData.generatedSteps.map(step => ({
+                ...step,
+                fields: step.fields.filter(field => field.selected !== false)
+            })).filter(step => step.fields.length > 0); // Remove steps with no selected fields
+            
+            if (selectedSteps.length === 0) {
+                this.showError('Please select at least one field to create your project.');
+                return;
+            }
+            
             const response = await PMConfig.fetch('api/v6/projects', {
                 method: 'POST',
                 body: JSON.stringify({
                     ...this.creationData,
+                    generatedSteps: selectedSteps,
                     finalizeProject: true
                 })
             });

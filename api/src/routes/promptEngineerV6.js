@@ -125,7 +125,22 @@ router.get('/projects', verifyAuth, async (req, res) => {
 router.post('/projects', verifyAuth, async (req, res) => {
     try {
         const { projectIdea, expertType, projectName, manualProject, projectDescription, aiRole, steps, finalizeProject, generatedSteps, refinementAnswers, accessLevel, requiredPermissionGroup } = req.body;
-        const user_id = req.user.userId;
+        
+        // Debug authentication
+        console.log('🔐 Authentication debug:', {
+            userExists: !!req.user,
+            userId: req.user?.userId,
+            userEmail: req.user?.email
+        });
+        
+        const user_id = req.user?.userId;
+        
+        if (!user_id) {
+            return res.status(401).json({
+                success: false,
+                error: 'User authentication required. Please log in.'
+            });
+        }
         
         // Manual project creation for testing
         if (manualProject) {
@@ -755,17 +770,23 @@ router.post('/projects/refinement-questions', async (req, res) => {
         console.log(`🤔 Generating refinement questions for: ${expertType} - ${projectIdea}`);
         
         // Generate refinement questions with AI
-        const questionsPrompt = `You are helping create a multi-step AI tool. Generate 3-5 thoughtful questions to help refine the project requirements.
+        const questionsPrompt = `You are helping an ADMIN design a multi-step AI tool for their users. Generate 3-5 thoughtful questions to ask the ADMIN about how they want their tool to work.
 
 Project: "${projectIdea}"
 Expert Type: "${expertType}"
 
-Generate questions that will help create better, more specific form fields for the end users. Focus on:
-- Target audience details
-- Specific use cases
-- Required information from users
-- Desired outcomes
-- Any special considerations
+Ask the ADMIN questions about their tool design preferences, NOT questions for end users. Focus on:
+- How detailed should the questions be?
+- What specific aspects should the tool focus on?
+- What level of privacy/sensitivity is appropriate?
+- What disclaimers or warnings should be included?
+- How should results be presented to users?
+- What additional features would be helpful?
+
+Example good admin questions:
+"How detailed should the medical history questions be?"
+"Should we include questions about recent lifestyle changes?"
+"What level of medical disclaimer do you want to include?"
 
 Respond with JSON only:
 {
@@ -809,15 +830,21 @@ router.post('/projects/more-questions', async (req, res) => {
         console.log(`🤔 Generating additional questions with ${refinementAnswers.length} previous answers`);
         
         // Generate more targeted questions based on previous answers
-        const moreQuestionsPrompt = `Based on the previous answers, generate 2-3 more specific questions to further refine the project.
+        const moreQuestionsPrompt = `You are helping an ADMIN refine their AI tool design. Based on their previous answers, generate 2-3 more specific ADMIN questions about how they want their tool to work.
 
 Project: "${projectIdea}"
 Expert Type: "${expertType}"
 
-Previous Q&A:
+Previous Admin Answers:
 ${refinementAnswers.map(qa => `Q: ${qa.question}\nA: ${qa.answer}`).join('\n\n')}
 
-Generate follow-up questions that dig deeper into the specific needs. Respond with JSON only:
+Generate follow-up questions for the ADMIN about tool design preferences, NOT questions for end users. Ask about:
+- Specific features they want to include/exclude
+- How detailed or simple they want the user experience
+- What level of accuracy/disclaimers they need
+- Any special requirements based on their previous answers
+
+Respond with JSON only:
 {
   "questions": [
     {

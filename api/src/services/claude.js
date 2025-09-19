@@ -147,7 +147,7 @@ Be concise, practical, and focused on creating deployable AI tools.`;
                 
                 response = await axios.post(this.apiUrl, requestData, {
                     headers: this.headers,
-                    timeout: 30000
+                    timeout: 60000  // Increased to 60 seconds for complex requests
                 });
                 
                 if (response.data && response.data.content && response.data.content.length > 0) {
@@ -170,7 +170,7 @@ Be concise, practical, and focused on creating deployable AI tools.`;
                 
                 response = await axios.post(this.apiUrl, requestData, {
                     headers: this.headers,
-                    timeout: 30000
+                    timeout: 60000  // Increased to 60 seconds for complex requests
                 });
                 
                 if (response.data && response.data.choices && response.data.choices.length > 0) {
