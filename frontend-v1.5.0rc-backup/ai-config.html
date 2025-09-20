@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Configuration - Prompt Machine</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/js/config.js"></script>
+    <style>
+        /* Prevent flash during loading */
+        body.loading .container {
+            display: none !important;
+        }
+        body.loading::before {
+            content: 'Loading AI Configuration...';
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.2rem;
+            color: #4F46E5;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen loading">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-sm border-b">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <h1 class="text-xl font-semibold text-gray-900">AI Configuration</h1>
+                    <span class="text-sm text-gray-500">Manage AI providers and API keys</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button onclick="goBack()" class="text-blue-600 hover:text-blue-800 text-sm">
+                        ← Back to Dashboard
+                    </button>
+                    <button onclick="logout()" class="text-red-600 hover:text-red-800 text-sm">
+                        Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto px-4 py-8">
+        <!-- Status Messages -->
+        <div id="statusMessage" class="mb-6 hidden"></div>
+
+        <!-- Current Configuration Summary -->
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">Current Configuration</h2>
+            <div id="currentConfig" class="text-gray-600">
+                <div class="flex items-center">
+                    <div class="animate-spin w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full mr-3"></div>
+                    Loading configuration...
+                </div>
+            </div>
+        </div>
+
+        <!-- AI Providers -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+            <!-- Provider cards will be dynamically generated here -->
+        </div>
+
+        <!-- Add New Provider Modal -->
+        <div id="providerModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+            <div class="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+                <h3 class="text-lg font-semibold mb-4" id="modalTitle">Configure AI Provider</h3>
+                
+                <form id="providerForm">
+                    <input type="hidden" id="providerId" name="providerId">
+                    
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Provider</label>
+                        <div id="providerName" class="text-gray-900 font-medium"></div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="apiKey" class="block text-sm font-medium text-gray-700 mb-2">API Key</label>
+                        <div class="relative">
+                            <input type="password" id="apiKey" name="apiKey" 
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                placeholder="Enter your API key">
+                            <button type="button" onclick="toggleApiKeyVisibility()" 
+                                class="absolute right-3 top-2 text-gray-500 hover:text-gray-700">
+                                👁️
+                            </button>
+                        </div>
+                        <div id="keyFormat" class="text-xs text-gray-500 mt-1"></div>
+                    </div>
+
+                    <div class="mb-4">
+                        <button type="button" onclick="testApiKey()" id="testButton"
+                            class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            Test API Key
+                        </button>
+                    </div>
+
+                    <div id="testResult" class="mb-4 hidden"></div>
+
+                    <div id="modelSelection" class="mb-4 hidden">
+                        <label for="selectedModel" class="block text-sm font-medium text-gray-700 mb-2">Select Model</label>
+                        <select id="selectedModel" name="selectedModel"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="">Choose a model...</option>
+                        </select>
+                    </div>
+
+                    <div class="flex space-x-3">
+                        <button type="button" onclick="closeModal()"
+                            class="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-400">
+                            Cancel
+                        </button>
+                        <button type="submit" id="saveButton"
+                            class="flex-1 bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700">
+                            Save Configuration
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentProviders = {};
+        let availableModels = [];
+
+        // Load configuration on page load
+        document.addEventListener('DOMContentLoaded', async function() {
+            const hasAuth = checkAuth();
+            if (hasAuth) {
+                await loadConfiguration();
+            }
+            // Remove loading state when done
+            document.body.classList.remove('loading');
+        });
+
+        // Wait for PMConfig to be available
+        function waitForConfig() {
+            return new Promise((resolve) => {
+                if (typeof PMConfig !== 'undefined') {
+                    resolve();
+                } else {
+                    setTimeout(() => waitForConfig().then(resolve), 100);
+                }
+            });
+        }
+
+        // Authentication check
+        function checkAuth() {
+            const token = localStorage.getItem('authToken');
+            if (!token) {
+                console.log('❌ No auth token found, redirecting to login...');
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 1000); // Give time to see any error messages
+                return false;
+            }
+            console.log('✅ Auth token found');
+            return true;
+        }
+
+        // Load current AI configuration
+        async function loadConfiguration() {
+            try {
+                console.log('🔧 Loading AI configuration...');
+                
+                const token = localStorage.getItem('authToken');
+                if (!token) {
+                    console.error('No auth token available');
+                    showStatus('Authentication required', 'error');
+                    return;
+                }
+                
+                // Use direct fetch with proper authentication headers
+                const response = await fetch('/api/admin/ai-config/public', {
+                    headers: {
+                        'Authorization': `Bearer ${token || 'dummy-token'}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                console.log('Response status:', response.status);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                console.log('AI config data:', data);
+                
+                if (data.success) {
+                    currentProviders = data.providers;
+                    displayCurrentConfig(data);
+                    displayProviders(data.providers);
+                } else {
+                    showStatus('Error loading configuration: ' + data.error, 'error');
+                }
+                
+            } catch (error) {
+                console.error('Load config error:', error);
+                showStatus('Failed to load AI configuration: ' + error.message, 'error');
+            }
+        }
+
+        // Display current active configuration
+        function displayCurrentConfig(data) {
+            const configDiv = document.getElementById('currentConfig');
+            
+            if (!data.currentModel) {
+                configDiv.innerHTML = `
+                    <div class="text-orange-600">
+                        <div class="flex items-center">
+                            <span class="text-orange-500 mr-2">⚠️</span>
+                            No AI provider is currently configured
+                        </div>
+                        <div class="text-sm mt-1">Please configure an AI provider below to enable AI features</div>
+                    </div>
+                `;
+                return;
+            }
+
+            // Find active provider
+            let activeProvider = null;
+            for (const [id, provider] of Object.entries(data.providers)) {
+                if (provider.isActive) {
+                    activeProvider = { id, ...provider };
+                    break;
+                }
+            }
+
+            configDiv.innerHTML = `
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div class="flex items-center">
+                            <span class="text-green-500 mr-2">✅</span>
+                            <span class="font-medium">${activeProvider ? activeProvider.name : 'Unknown'}</span>
+                        </div>
+                        <div class="text-sm text-gray-500 mt-1">
+                            Model: <span class="font-mono">${data.currentModel}</span>
+                        </div>
+                    </div>
+                    <div class="text-sm text-gray-500">
+                        Status: <span class="text-green-600 font-medium">Active</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Display provider cards
+        function displayProviders(providers) {
+            const container = document.querySelector('.grid');
+            container.innerHTML = '';
+
+            for (const [id, provider] of Object.entries(providers)) {
+                const card = createProviderCard(id, provider);
+                container.appendChild(card);
+            }
+        }
+
+        // Create provider card
+        function createProviderCard(id, provider) {
+            const card = document.createElement('div');
+            card.className = 'bg-white rounded-lg shadow p-6';
+
+            const statusColor = provider.hasKey ? 
+                (provider.isActive ? 'text-green-600' : 'text-blue-600') : 
+                'text-gray-400';
+            
+            const statusIcon = provider.hasKey ? 
+                (provider.isActive ? '✅' : '🔑') : 
+                '➕';
+
+            const statusText = provider.hasKey ? 
+                (provider.isActive ? 'Active' : 'Configured') : 
+                'Not Configured';
+
+            card.innerHTML = `
+                <div class="flex items-start justify-between mb-4">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900">${provider.name}</h3>
+                        <div class="flex items-center mt-1">
+                            <span class="${statusColor} mr-2">${statusIcon}</span>
+                            <span class="text-sm ${statusColor}">${statusText}</span>
+                        </div>
+                    </div>
+                </div>
+
+                ${provider.hasKey ? `
+                    <div class="mb-4">
+                        <div class="text-sm text-gray-600">
+                            <div>API Key: <span class="font-mono text-xs">${provider.keyPreview}</span></div>
+                            ${provider.selectedModel ? `<div class="mt-1">Model: <span class="font-mono text-xs">${provider.selectedModel}</span></div>` : ''}
+                        </div>
+                    </div>
+                ` : ''}
+
+                <div class="flex flex-col space-y-2">
+                    <div class="flex space-x-2">
+                        <button onclick="configureProvider('${id}')" 
+                            class="flex-1 ${provider.hasKey ? 'bg-blue-600 hover:bg-blue-700' : 'bg-green-600 hover:bg-green-700'} text-white py-2 px-3 rounded text-sm">
+                            ${provider.hasKey ? 'Update Key' : 'Add Key'}
+                        </button>
+                        
+                        ${provider.hasKey ? `
+                            <button onclick="removeProvider('${id}')" 
+                                class="bg-red-600 hover:bg-red-700 text-white py-2 px-3 rounded text-sm">
+                                Remove
+                            </button>
+                        ` : ''}
+                    </div>
+                    
+                    ${provider.hasKey ? `
+                        <div class="flex space-x-2">
+                            ${!provider.isActive ? `
+                                <button onclick="setActiveProvider('${id}')" 
+                                    class="flex-1 bg-orange-600 hover:bg-orange-700 text-white py-2 px-3 rounded text-sm">
+                                    <i class="fas fa-play mr-1"></i>Set as Active
+                                </button>
+                            ` : `
+                                <button onclick="changeActiveModel('${id}')" 
+                                    class="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-2 px-3 rounded text-sm">
+                                    <i class="fas fa-exchange-alt mr-1"></i>Switch Model
+                                </button>
+                            `}
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+
+            return card;
+        }
+
+        // Configure provider
+        function configureProvider(providerId) {
+            const provider = currentProviders[providerId];
+            
+            document.getElementById('providerId').value = providerId;
+            document.getElementById('modalTitle').textContent = `Configure ${provider.name}`;
+            document.getElementById('providerName').textContent = provider.name;
+            document.getElementById('keyFormat').textContent = `Format: ${provider.keyFormat}`;
+            
+            // Clear previous values
+            document.getElementById('apiKey').value = '';
+            document.getElementById('testResult').classList.add('hidden');
+            
+            // Always show model selection with default models
+            populateModelSelection(provider.models);
+            document.getElementById('modelSelection').classList.remove('hidden');
+            
+            // If the provider already has a selected model, pre-select it
+            if (provider.selectedModel) {
+                document.getElementById('selectedModel').value = provider.selectedModel;
+            }
+            
+            document.getElementById('providerModal').classList.remove('hidden');
+            document.getElementById('providerModal').classList.add('flex');
+        }
+
+        // Close modal
+        function closeModal() {
+            document.getElementById('providerModal').classList.add('hidden');
+            document.getElementById('providerModal').classList.remove('flex');
+        }
+
+        // Toggle API key visibility
+        function toggleApiKeyVisibility() {
+            const input = document.getElementById('apiKey');
+            input.type = input.type === 'password' ? 'text' : 'password';
+        }
+
+        // Test API key
+        async function testApiKey() {
+            const providerId = document.getElementById('providerId').value;
+            const apiKey = document.getElementById('apiKey').value;
+            
+            if (!apiKey.trim()) {
+                showTestResult('Please enter an API key', 'error');
+                return;
+            }
+
+            const testButton = document.getElementById('testButton');
+            testButton.disabled = true;
+            testButton.textContent = 'Testing...';
+
+            try {
+                const token = localStorage.getItem('authToken');
+                const response = await fetch('/api/admin/ai-config/test-key', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token || 'dummy-token'}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ providerId, apiKey })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    showTestResult(`✅ API key is valid! Found ${data.models.length} available models.`, 'success');
+                    availableModels = data.models;
+                    populateModelSelection(data.models);
+                } else {
+                    showTestResult(`❌ ${data.error}`, 'error');
+                    document.getElementById('modelSelection').classList.add('hidden');
+                }
+                
+            } catch (error) {
+                console.error('Test API key error:', error);
+                showTestResult('❌ Failed to test API key', 'error');
+            } finally {
+                testButton.disabled = false;
+                testButton.textContent = 'Test API Key';
+            }
+        }
+
+        // Show test result
+        function showTestResult(message, type) {
+            const resultDiv = document.getElementById('testResult');
+            resultDiv.className = `mb-4 p-3 rounded ${type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`;
+            resultDiv.textContent = message;
+            resultDiv.classList.remove('hidden');
+        }
+
+        // Populate model selection
+        function populateModelSelection(models, selectedModel = null) {
+            const select = document.getElementById('selectedModel');
+            select.innerHTML = '<option value="">Choose a model...</option>';
+            
+            models.forEach(model => {
+                const option = document.createElement('option');
+                option.value = model;
+                option.textContent = model;
+                select.appendChild(option);
+            });
+            
+            // Pre-select the model if provided, otherwise select first model by default
+            if (selectedModel && models.includes(selectedModel)) {
+                select.value = selectedModel;
+            } else if (models.length > 0) {
+                select.value = models[0];
+            }
+            
+            document.getElementById('modelSelection').classList.remove('hidden');
+        }
+
+        // Track if save is in progress to prevent double-submission
+        let saveInProgress = false;
+
+        // Save provider configuration
+        document.getElementById('providerForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            // Prevent multiple simultaneous saves
+            if (saveInProgress) {
+                console.log('⏳ Save already in progress, ignoring duplicate request');
+                return;
+            }
+            
+            const providerId = document.getElementById('providerId').value;
+            const apiKey = document.getElementById('apiKey').value;
+            const selectedModel = document.getElementById('selectedModel').value;
+            
+            if (!apiKey.trim()) {
+                showStatus('Please enter an API key', 'error');
+                return;
+            }
+            
+            if (!selectedModel) {
+                showStatus('Please select a model', 'error');
+                return;
+            }
+
+            saveInProgress = true;
+            const saveButton = document.getElementById('saveButton');
+            saveButton.disabled = true;
+            saveButton.textContent = 'Saving & Restarting...';
+
+            try {
+                const token = localStorage.getItem('authToken');
+                const response = await fetch('/api/admin/ai-config/update-key', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token || 'dummy-token'}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ providerId, apiKey, selectedModel })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    showStatus(`✅ ${data.message}`, 'success');
+                    
+                    // Close modal immediately
+                    closeModal();
+                    
+                    // Reload configuration to show updated state (no delay needed)
+                    setTimeout(() => loadConfiguration(), 500);
+                } else {
+                    showStatus(`❌ ${data.error}`, 'error');
+                }
+                
+            } catch (error) {
+                console.error('Save configuration error:', error);
+                showStatus('Failed to save configuration', 'error');
+            } finally {
+                saveInProgress = false;
+                saveButton.disabled = false;
+                saveButton.textContent = 'Save Configuration';
+            }
+        });
+
+        // Set active provider
+        async function setActiveProvider(providerId) {
+            const provider = currentProviders[providerId];
+            
+            // If no model is selected, show a selection prompt
+            if (!provider.selectedModel) {
+                const availableModels = provider.models || [];
+                if (availableModels.length === 0) {
+                    showStatus('No models available for this provider. Please configure it first.', 'error');
+                    return;
+                }
+                
+                // Create a simple model selection dialog
+                const selectedModel = await showModelSelectionDialog(provider.name, availableModels);
+                if (!selectedModel) {
+                    return; // User cancelled
+                }
+                
+                // Use the selected model
+                activateProviderWithModel(providerId, selectedModel);
+            } else {
+                // Use the already selected model
+                activateProviderWithModel(providerId, provider.selectedModel);
+            }
+        }
+
+        // Show model selection dialog
+        function showModelSelectionDialog(providerName, models) {
+            return new Promise((resolve) => {
+                const modal = document.createElement('div');
+                modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+                modal.innerHTML = `
+                    <div class="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+                        <h3 class="text-lg font-semibold mb-4">Select Model for ${providerName}</h3>
+                        <select id="activationModelSelect" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4">
+                            ${models.map(model => `<option value="${model}">${model}</option>`).join('')}
+                        </select>
+                        <div class="flex space-x-3">
+                            <button id="cancelActivation" class="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-400">
+                                Cancel
+                            </button>
+                            <button id="confirmActivation" class="flex-1 bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700">
+                                Activate
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                document.body.appendChild(modal);
+                
+                document.getElementById('cancelActivation').onclick = () => {
+                    document.body.removeChild(modal);
+                    resolve(null);
+                };
+                
+                document.getElementById('confirmActivation').onclick = () => {
+                    const selectedModel = document.getElementById('activationModelSelect').value;
+                    document.body.removeChild(modal);
+                    resolve(selectedModel);
+                };
+            });
+        }
+
+        // Activate provider with specific model
+        async function activateProviderWithModel(providerId, model) {
+            showStatus('🔄 Activating provider and restarting server...', 'info');
+
+            try {
+                const token = localStorage.getItem('authToken');
+                const response = await fetch('/api/admin/ai-config/set-active', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token || 'dummy-token'}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        providerId, 
+                        model: model 
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    if (data.restarted) {
+                        showStatus(`✅ ${data.message} - AI features are now using this provider!`, 'success');
+                        // Wait for server restart
+                        setTimeout(() => loadConfiguration(), 3000);
+                    } else if (data.warning) {
+                        showStatus(`⚠️ ${data.warning}`, 'warning');
+                        setTimeout(() => loadConfiguration(), 2000);
+                    } else {
+                        showStatus(`✅ ${data.message} - AI provider activated!`, 'success');
+                        // Reload immediately since no restart needed
+                        setTimeout(() => loadConfiguration(), 1000);
+                    }
+                } else {
+                    showStatus(`❌ ${data.error}`, 'error');
+                }
+                
+            } catch (error) {
+                console.error('Set active provider error:', error);
+                showStatus('Failed to set active provider', 'error');
+            }
+        }
+
+        // Change model for active provider
+        async function changeActiveModel(providerId) {
+            const provider = currentProviders[providerId];
+            
+            if (!provider.isActive) {
+                showStatus('This provider is not currently active', 'error');
+                return;
+            }
+            
+            const availableModels = provider.models || [];
+            if (availableModels.length === 0) {
+                showStatus('No models available for this provider', 'error');
+                return;
+            }
+            
+            // Show model selection dialog
+            const selectedModel = await showModelSelectionDialog(provider.name, availableModels);
+            if (!selectedModel) {
+                return; // User cancelled
+            }
+            
+            // If user selected the same model, don't do anything
+            if (selectedModel === provider.selectedModel) {
+                showStatus('Model is already selected', 'info');
+                return;
+            }
+            
+            showStatus('🔄 Changing active model...', 'info');
+
+            try {
+                const token = localStorage.getItem('authToken');
+                const response = await fetch('/api/admin/ai-config/set-active', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token || 'dummy-token'}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        providerId, 
+                        model: selectedModel 
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    showStatus(`✅ Model changed to ${selectedModel}!`, 'success');
+                    // Reload configuration to show updated model
+                    setTimeout(() => loadConfiguration(), 1000);
+                } else {
+                    showStatus(`❌ ${data.error}`, 'error');
+                }
+                
+            } catch (error) {
+                console.error('Change model error:', error);
+                showStatus('Failed to change model', 'error');
+            }
+        }
+
+        // Remove provider
+        async function removeProvider(providerId) {
+            if (!confirm('Are you sure you want to remove this API key?')) {
+                return;
+            }
+
+            try {
+                const token = localStorage.getItem('authToken');
+                const response = await fetch(`/api/admin/ai-config/remove-key/${providerId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token || 'dummy-token'}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    showStatus(`✅ ${data.message}`, 'success');
+                    loadConfiguration();
+                } else {
+                    showStatus(`❌ ${data.error}`, 'error');
+                }
+                
+            } catch (error) {
+                console.error('Remove provider error:', error);
+                showStatus('Failed to remove provider', 'error');
+            }
+        }
+
+        // Show status message
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('statusMessage');
+            let className;
+            
+            switch (type) {
+                case 'success':
+                    className = 'mb-6 p-4 rounded bg-green-100 text-green-700';
+                    break;
+                case 'error':
+                    className = 'mb-6 p-4 rounded bg-red-100 text-red-700';
+                    break;
+                case 'warning':
+                    className = 'mb-6 p-4 rounded bg-yellow-100 text-yellow-700';
+                    break;
+                case 'info':
+                    className = 'mb-6 p-4 rounded bg-blue-100 text-blue-700';
+                    break;
+                default:
+                    className = 'mb-6 p-4 rounded bg-gray-100 text-gray-700';
+            }
+            
+            statusDiv.className = className;
+            statusDiv.textContent = message;
+            statusDiv.classList.remove('hidden');
+            
+            // Auto hide after 8 seconds for success/info, 10 seconds for warnings
+            const hideTimeout = (type === 'success' || type === 'info') ? 8000 : 
+                               (type === 'warning') ? 10000 : 5000;
+            setTimeout(() => {
+                statusDiv.classList.add('hidden');
+            }, hideTimeout);
+        }
+
+        // Navigation functions
+        function goBack() {
+            window.location.href = '/';
+        }
+
+        function logout() {
+            localStorage.removeItem('authToken');
+            window.location.href = '/';
+        }
+    </script>
+</body>
+</html>

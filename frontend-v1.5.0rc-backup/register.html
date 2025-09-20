@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - Prompt Machine</title>
+    <meta name="description" content="Create your Prompt Machine account">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-purple-50 min-h-screen">
+    
+    <div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-md w-full space-y-8">
+            
+            <!-- Header -->
+            <div class="text-center">
+                <div class="text-6xl text-blue-600 mb-4">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <h2 class="text-3xl font-bold text-gray-900">Join Prompt Machine</h2>
+                <p class="mt-2 text-gray-600">Create your account and start building AI tools</p>
+            </div>
+
+            <!-- Registration Form -->
+            <div class="bg-white rounded-lg shadow-xl p-8">
+                <form id="register-form" class="space-y-6">
+                    
+                    <!-- Name Fields -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="firstName" class="block text-sm font-medium text-gray-700 mb-2">
+                                First Name
+                            </label>
+                            <input type="text" id="firstName" name="firstName" required
+                                   class="block w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                   placeholder="John">
+                        </div>
+                        <div>
+                            <label for="lastName" class="block text-sm font-medium text-gray-700 mb-2">
+                                Last Name
+                            </label>
+                            <input type="text" id="lastName" name="lastName" required
+                                   class="block w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                   placeholder="Doe">
+                        </div>
+                    </div>
+
+                    <!-- Email -->
+                    <div>
+                        <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
+                            Email Address
+                        </label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fas fa-envelope text-gray-400"></i>
+                            </div>
+                            <input type="email" id="email" name="email" required
+                                   class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                   placeholder="john@example.com">
+                        </div>
+                    </div>
+
+                    <!-- Password -->
+                    <div>
+                        <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
+                            Password
+                        </label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fas fa-lock text-gray-400"></i>
+                            </div>
+                            <input type="password" id="password" name="password" required
+                                   class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                   placeholder="Min. 8 characters">
+                        </div>
+                        <p class="mt-1 text-xs text-gray-500">Must be at least 8 characters long</p>
+                    </div>
+
+                    <!-- Confirm Password -->
+                    <div>
+                        <label for="confirmPassword" class="block text-sm font-medium text-gray-700 mb-2">
+                            Confirm Password
+                        </label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fas fa-lock text-gray-400"></i>
+                            </div>
+                            <input type="password" id="confirmPassword" name="confirmPassword" required
+                                   class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                   placeholder="Confirm your password">
+                        </div>
+                    </div>
+
+                    <!-- Error Message -->
+                    <div id="error-message" class="hidden p-3 bg-red-100 border border-red-300 rounded-lg">
+                        <div class="flex items-center">
+                            <i class="fas fa-exclamation-circle text-red-500 mr-2"></i>
+                            <span id="error-text" class="text-red-700 text-sm"></span>
+                        </div>
+                    </div>
+
+                    <!-- Success Message -->
+                    <div id="success-message" class="hidden p-3 bg-green-100 border border-green-300 rounded-lg">
+                        <div class="flex items-center">
+                            <i class="fas fa-check-circle text-green-500 mr-2"></i>
+                            <span id="success-text" class="text-green-700 text-sm"></span>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" id="register-btn"
+                            class="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 font-medium transition-colors">
+                        <span id="register-text">Create Account</span>
+                        <span id="register-loading" class="hidden">
+                            <i class="fas fa-spinner fa-spin mr-2"></i>
+                            Creating account...
+                        </span>
+                    </button>
+
+                </form>
+
+                <!-- Divider -->
+                <div class="mt-6 text-center">
+                    <div class="relative">
+                        <div class="absolute inset-0 flex items-center">
+                            <div class="w-full border-t border-gray-300"></div>
+                        </div>
+                        <div class="relative flex justify-center text-sm">
+                            <span class="px-2 bg-white text-gray-500">Already have an account?</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Login Link -->
+                <div class="mt-6 text-center">
+                    <a href="login.html" class="text-blue-600 hover:text-blue-500 font-medium">
+                        Sign in to your account
+                    </a>
+                </div>
+            </div>
+
+            <!-- Features -->
+            <div class="text-center text-sm text-gray-600">
+                <p>Start creating amazing AI tools in minutes</p>
+                <div class="flex justify-center items-center space-x-6 mt-4">
+                    <div class="flex items-center">
+                        <i class="fas fa-magic text-blue-500 mr-2"></i>
+                        <span>AI-Powered</span>
+                    </div>
+                    <div class="flex items-center">
+                        <i class="fas fa-rocket text-green-500 mr-2"></i>
+                        <span>Quick Deploy</span>
+                    </div>
+                    <div class="flex items-center">
+                        <i class="fas fa-free-code-camp text-purple-500 mr-2"></i>
+                        <span>Free to Start</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class RegisterForm {
+            constructor() {
+                this.form = document.getElementById('register-form');
+                this.firstNameInput = document.getElementById('firstName');
+                this.lastNameInput = document.getElementById('lastName');
+                this.emailInput = document.getElementById('email');
+                this.passwordInput = document.getElementById('password');
+                this.confirmPasswordInput = document.getElementById('confirmPassword');
+                this.registerBtn = document.getElementById('register-btn');
+                this.registerText = document.getElementById('register-text');
+                this.registerLoading = document.getElementById('register-loading');
+                this.errorMessage = document.getElementById('error-message');
+                this.errorText = document.getElementById('error-text');
+                this.successMessage = document.getElementById('success-message');
+                this.successText = document.getElementById('success-text');
+
+                this.init();
+            }
+
+            init() {
+                // Check if user is already logged in
+                const token = localStorage.getItem('authToken');
+                if (token) {
+                    window.location.href = 'user-dashboard.html';
+                    return;
+                }
+
+                this.form.addEventListener('submit', (e) => this.handleSubmit(e));
+                
+                // Real-time password validation
+                this.confirmPasswordInput.addEventListener('input', () => this.validatePasswords());
+            }
+
+            validatePasswords() {
+                const password = this.passwordInput.value;
+                const confirmPassword = this.confirmPasswordInput.value;
+                
+                if (confirmPassword && password !== confirmPassword) {
+                    this.confirmPasswordInput.setCustomValidity('Passwords do not match');
+                } else {
+                    this.confirmPasswordInput.setCustomValidity('');
+                }
+            }
+
+            async handleSubmit(e) {
+                e.preventDefault();
+
+                const firstName = this.firstNameInput.value.trim();
+                const lastName = this.lastNameInput.value.trim();
+                const email = this.emailInput.value.trim();
+                const password = this.passwordInput.value;
+                const confirmPassword = this.confirmPasswordInput.value;
+
+                // Validation
+                if (!firstName || !lastName || !email || !password || !confirmPassword) {
+                    this.showError('Please fill in all fields');
+                    return;
+                }
+
+                if (password !== confirmPassword) {
+                    this.showError('Passwords do not match');
+                    return;
+                }
+
+                if (password.length < 8) {
+                    this.showError('Password must be at least 8 characters long');
+                    return;
+                }
+
+                this.setLoading(true);
+                this.hideMessages();
+
+                try {
+                    const response = await fetch('/api/auth/register', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            firstName,
+                            lastName,
+                            email,
+                            password,
+                            confirmPassword
+                        })
+                    });
+
+                    const data = await response.json();
+
+                    if (!response.ok) {
+                        throw new Error(data.error || 'Registration failed');
+                    }
+
+                    if (data.success && data.token) {
+                        // Store token
+                        localStorage.setItem('authToken', data.token);
+                        
+                        // Store user info
+                        localStorage.setItem('user', JSON.stringify(data.user));
+
+                        // Show success message
+                        this.showSuccess('Account created successfully! Redirecting...');
+
+                        // Redirect to dashboard after a short delay
+                        setTimeout(() => {
+                            window.location.href = 'user-dashboard.html';
+                        }, 1500);
+                    } else {
+                        throw new Error('Invalid response from server');
+                    }
+
+                } catch (error) {
+                    console.error('Registration error:', error);
+                    this.showError(error.message || 'Registration failed. Please try again.');
+                } finally {
+                    this.setLoading(false);
+                }
+            }
+
+            setLoading(loading) {
+                this.registerBtn.disabled = loading;
+                
+                if (loading) {
+                    this.registerText.classList.add('hidden');
+                    this.registerLoading.classList.remove('hidden');
+                } else {
+                    this.registerText.classList.remove('hidden');
+                    this.registerLoading.classList.add('hidden');
+                }
+            }
+
+            showError(message) {
+                this.errorText.textContent = message;
+                this.errorMessage.classList.remove('hidden');
+                this.successMessage.classList.add('hidden');
+            }
+
+            showSuccess(message) {
+                this.successText.textContent = message;
+                this.successMessage.classList.remove('hidden');
+                this.errorMessage.classList.add('hidden');
+            }
+
+            hideMessages() {
+                this.errorMessage.classList.add('hidden');
+                this.successMessage.classList.add('hidden');
+            }
+        }
+
+        // Initialize registration form
+        const registerForm = new RegisterForm();
+    </script>
+</body>
+</html>

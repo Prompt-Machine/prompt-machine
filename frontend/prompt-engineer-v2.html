@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prompt Engineer v2.0.0rc - Universal AI Tool Creator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .gradient-text {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .tool-category-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .tool-category-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        .premium-badge {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .field-item {
+            transition: all 0.3s ease;
+        }
+        .field-item.dragging {
+            opacity: 0.5;
+        }
+        .loading-dots::after {
+            content: '';
+            animation: dots 1.5s steps(4, end) infinite;
+        }
+        @keyframes dots {
+            0%, 20% { content: ''; }
+            40% { content: '.'; }
+            60% { content: '..'; }
+            80%, 100% { content: '...'; }
+        }
+        .ai-thinking {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: .5; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Navigation Header -->
+    <nav class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <h1 class="text-xl font-bold gradient-text">Prompt Engineer v2.0.0rc</h1>
+                    <span class="ml-3 px-2 py-1 text-xs bg-purple-100 text-purple-800 rounded-full">Universal Creator</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button id="helpButton" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-question-circle"></i>
+                    </button>
+                    <button id="settingsButton" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-cog"></i>
+                    </button>
+                    <button onclick="window.location.href='/'" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-home"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Tool Creation Wizard -->
+        <div id="wizardContainer" class="bg-white rounded-lg shadow-lg p-6 mb-8">
+            <!-- Step Indicator -->
+            <div class="mb-8">
+                <div class="flex items-center justify-between">
+                    <div class="flex-1">
+                        <div class="flex items-center">
+                            <div id="step1Indicator" class="w-10 h-10 bg-purple-600 text-white rounded-full flex items-center justify-center font-semibold">1</div>
+                            <div class="flex-1 h-1 bg-purple-600 mx-2"></div>
+                        </div>
+                        <p class="text-sm mt-2 text-purple-600 font-medium">Describe Tool</p>
+                    </div>
+                    <div class="flex-1">
+                        <div class="flex items-center">
+                            <div id="step2Indicator" class="w-10 h-10 bg-gray-300 text-gray-600 rounded-full flex items-center justify-center font-semibold">2</div>
+                            <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                        </div>
+                        <p class="text-sm mt-2 text-gray-600">Configure Fields</p>
+                    </div>
+                    <div class="flex-1">
+                        <div class="flex items-center">
+                            <div id="step3Indicator" class="w-10 h-10 bg-gray-300 text-gray-600 rounded-full flex items-center justify-center font-semibold">3</div>
+                            <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                        </div>
+                        <p class="text-sm mt-2 text-gray-600">Set Permissions</p>
+                    </div>
+                    <div class="flex-1">
+                        <div class="flex items-center">
+                            <div id="step4Indicator" class="w-10 h-10 bg-gray-300 text-gray-600 rounded-full flex items-center justify-center font-semibold">4</div>
+                        </div>
+                        <p class="text-sm mt-2 text-gray-600">Deploy</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 1: Tool Description -->
+            <div id="step1Content" class="step-content">
+                <h2 class="text-2xl font-bold mb-6">What Kind of Tool Would You Like to Create?</h2>
+                
+                <!-- AI Assistant Introduction -->
+                <div class="bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg p-6 mb-6">
+                    <div class="flex items-start">
+                        <div class="flex-shrink-0">
+                            <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-md">
+                                <i class="fas fa-robot text-purple-600"></i>
+                            </div>
+                        </div>
+                        <div class="ml-4 flex-1">
+                            <p class="text-gray-700" id="aiGreeting">
+                                Hello! I'm your AI assistant. I can help you create ANY type of tool - from simple calculators to complex assessment systems. 
+                                Just describe what you want to build, and I'll guide you through the process!
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Templates -->
+                <div class="mb-6">
+                    <h3 class="text-lg font-semibold mb-3">Quick Start Templates</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                        <button class="tool-category-card p-4 border-2 border-gray-200 rounded-lg hover:border-purple-500 text-center" data-category="assessment">
+                            <i class="fas fa-clipboard-check text-2xl text-purple-600 mb-2"></i>
+                            <p class="text-sm font-medium">Assessment</p>
+                        </button>
+                        <button class="tool-category-card p-4 border-2 border-gray-200 rounded-lg hover:border-purple-500 text-center" data-category="creative">
+                            <i class="fas fa-pen-fancy text-2xl text-blue-600 mb-2"></i>
+                            <p class="text-sm font-medium">Creative</p>
+                        </button>
+                        <button class="tool-category-card p-4 border-2 border-gray-200 rounded-lg hover:border-purple-500 text-center" data-category="utility">
+                            <i class="fas fa-tools text-2xl text-green-600 mb-2"></i>
+                            <p class="text-sm font-medium">Utility</p>
+                        </button>
+                        <button class="tool-category-card p-4 border-2 border-gray-200 rounded-lg hover:border-purple-500 text-center" data-category="business">
+                            <i class="fas fa-briefcase text-2xl text-indigo-600 mb-2"></i>
+                            <p class="text-sm font-medium">Business</p>
+                        </button>
+                        <button class="tool-category-card p-4 border-2 border-gray-200 rounded-lg hover:border-purple-500 text-center" data-category="educational">
+                            <i class="fas fa-graduation-cap text-2xl text-yellow-600 mb-2"></i>
+                            <p class="text-sm font-medium">Educational</p>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tool Description Form -->
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Tool Name <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" id="toolName" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent" placeholder="e.g., Health Risk Calculator, Story Generator, Currency Converter">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Describe Your Tool <span class="text-red-500">*</span>
+                        </label>
+                        <textarea id="toolDescription" rows="4" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent" 
+                            placeholder="Tell me what you want your tool to do. Be as specific as possible. For example: 'I want to create a pregnancy probability calculator that asks medical questions and calculates likelihood based on symptoms and timing' or 'I want a simple to-do list app with categories and due dates'"></textarea>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Target Audience</label>
+                            <select id="targetAudience" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                                <option value="general">General Public</option>
+                                <option value="professionals">Professionals</option>
+                                <option value="businesses">Businesses</option>
+                                <option value="students">Students</option>
+                                <option value="healthcare">Healthcare</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Complexity</label>
+                            <select id="complexity" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                                <option value="auto">Auto-detect</option>
+                                <option value="simple">Simple (1-3 fields)</option>
+                                <option value="moderate">Moderate (4-10 fields)</option>
+                                <option value="complex">Complex (10+ fields)</option>
+                                <option value="advanced">Advanced (Multi-step with calculations)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center">
+                        <input type="checkbox" id="enableCalculations" class="mr-2">
+                        <label for="enableCalculations" class="text-sm text-gray-700">Enable calculations and scoring (for assessments, quizzes, risk calculators)</label>
+                    </div>
+
+                    <div class="flex items-center">
+                        <input type="checkbox" id="enablePermissions" class="mr-2" checked>
+                        <label for="enablePermissions" class="text-sm text-gray-700">Enable field-level permissions (monetization through tiered access)</label>
+                    </div>
+                </div>
+
+                <!-- AI Analysis Button -->
+                <div class="mt-6 flex justify-end">
+                    <button id="analyzeButton" class="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-semibold rounded-lg hover:shadow-lg transition-all">
+                        <i class="fas fa-magic mr-2"></i>Analyze & Generate Structure
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 2: Field Configuration -->
+            <div id="step2Content" class="step-content hidden">
+                <h2 class="text-2xl font-bold mb-6">Configure Your Tool Fields</h2>
+
+                <!-- AI Suggestions -->
+                <div id="aiSuggestions" class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 hidden">
+                    <div class="flex items-start">
+                        <i class="fas fa-lightbulb text-blue-500 mt-1 mr-3"></i>
+                        <div class="flex-1">
+                            <p class="font-semibold text-blue-900 mb-1">AI Recommendations</p>
+                            <div id="suggestionsList" class="text-sm text-blue-800"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Steps Management -->
+                <div class="mb-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold">Tool Steps</h3>
+                        <button id="addStepButton" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">
+                            <i class="fas fa-plus mr-2"></i>Add Step
+                        </button>
+                    </div>
+                    <div id="stepsContainer" class="space-y-4">
+                        <!-- Steps will be added dynamically -->
+                    </div>
+                </div>
+
+                <!-- Fields Management -->
+                <div>
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold">Fields</h3>
+                        <div class="space-x-2">
+                            <button id="aiGenerateFields" class="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600">
+                                <i class="fas fa-robot mr-2"></i>AI Generate Fields
+                            </button>
+                            <button id="addFieldButton" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">
+                                <i class="fas fa-plus mr-2"></i>Add Field
+                            </button>
+                        </div>
+                    </div>
+                    <div id="fieldsContainer" class="space-y-3">
+                        <!-- Fields will be added dynamically -->
+                    </div>
+                </div>
+
+                <!-- Navigation -->
+                <div class="mt-6 flex justify-between">
+                    <button id="backToStep1" class="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+                        <i class="fas fa-arrow-left mr-2"></i>Back
+                    </button>
+                    <button id="continueToStep3" class="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-semibold rounded-lg hover:shadow-lg">
+                        Continue to Permissions <i class="fas fa-arrow-right ml-2"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 3: Permission Configuration -->
+            <div id="step3Content" class="step-content hidden">
+                <h2 class="text-2xl font-bold mb-6">Configure Field Permissions</h2>
+
+                <!-- Permission Overview -->
+                <div class="bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg p-6 mb-6">
+                    <h3 class="font-semibold mb-3">Monetization Through Tiered Access</h3>
+                    <p class="text-sm text-gray-700 mb-4">
+                        Set which fields require premium access. Users will see locked fields with upgrade prompts, creating natural monetization opportunities.
+                    </p>
+                    <div class="grid grid-cols-3 gap-4">
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-green-600" id="freeFieldCount">0</div>
+                            <p class="text-sm text-gray-600">Free Fields</p>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-purple-600" id="premiumFieldCount">0</div>
+                            <p class="text-sm text-gray-600">Premium Fields</p>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-indigo-600" id="enterpriseFieldCount">0</div>
+                            <p class="text-sm text-gray-600">Enterprise Fields</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Field Permission List -->
+                <div id="fieldPermissionsList" class="space-y-3 mb-6">
+                    <!-- Field permissions will be listed here -->
+                </div>
+
+                <!-- Upgrade Prompt Configuration -->
+                <div class="border-t pt-6">
+                    <h3 class="text-lg font-semibold mb-4">Upgrade Prompt Configuration</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Premium Upgrade Message</label>
+                            <textarea id="premiumUpgradeMessage" rows="2" class="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                                placeholder="Unlock advanced features and detailed analysis with our premium subscription">Unlock advanced features and detailed analysis with our premium subscription</textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">CTA Button Text</label>
+                            <input type="text" id="ctaButtonText" class="w-full px-4 py-2 border border-gray-300 rounded-lg" value="Upgrade Now">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navigation -->
+                <div class="mt-6 flex justify-between">
+                    <button id="backToStep2" class="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+                        <i class="fas fa-arrow-left mr-2"></i>Back
+                    </button>
+                    <button id="continueToStep4" class="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-semibold rounded-lg hover:shadow-lg">
+                        Continue to Deploy <i class="fas fa-arrow-right ml-2"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 4: Deploy -->
+            <div id="step4Content" class="step-content hidden">
+                <h2 class="text-2xl font-bold mb-6">Deploy Your Tool</h2>
+
+                <!-- Tool Preview -->
+                <div class="bg-gray-50 rounded-lg p-6 mb-6">
+                    <h3 class="font-semibold mb-4">Tool Summary</h3>
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                            <span class="text-gray-600">Name:</span>
+                            <span class="ml-2 font-medium" id="summaryName">-</span>
+                        </div>
+                        <div>
+                            <span class="text-gray-600">Type:</span>
+                            <span class="ml-2 font-medium" id="summaryType">-</span>
+                        </div>
+                        <div>
+                            <span class="text-gray-600">Steps:</span>
+                            <span class="ml-2 font-medium" id="summarySteps">-</span>
+                        </div>
+                        <div>
+                            <span class="text-gray-600">Fields:</span>
+                            <span class="ml-2 font-medium" id="summaryFields">-</span>
+                        </div>
+                        <div>
+                            <span class="text-gray-600">Calculations:</span>
+                            <span class="ml-2 font-medium" id="summaryCalculations">-</span>
+                        </div>
+                        <div>
+                            <span class="text-gray-600">Premium Fields:</span>
+                            <span class="ml-2 font-medium" id="summaryPremium">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Deployment Options -->
+                <div class="space-y-4 mb-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Subdomain</label>
+                        <div class="flex items-center">
+                            <span class="text-gray-500 mr-2">https://</span>
+                            <input type="text" id="subdomain" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg">
+                            <span class="text-gray-500 ml-2">.tool.prompt-machine.com</span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Access Level</label>
+                        <select id="accessLevel" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                            <option value="public">Public (Anyone can access)</option>
+                            <option value="registered">Registered Users Only</option>
+                            <option value="premium">Premium Users Only</option>
+                        </select>
+                    </div>
+
+                    <div class="flex items-center">
+                        <input type="checkbox" id="enableAnalytics" class="mr-2" checked>
+                        <label for="enableAnalytics" class="text-sm text-gray-700">Enable analytics tracking</label>
+                    </div>
+
+                    <div class="flex items-center">
+                        <input type="checkbox" id="enableAds" class="mr-2">
+                        <label for="enableAds" class="text-sm text-gray-700">Enable advertising (Google AdSense)</label>
+                    </div>
+                </div>
+
+                <!-- Deploy Button -->
+                <div class="flex justify-between">
+                    <button id="backToStep3" class="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+                        <i class="fas fa-arrow-left mr-2"></i>Back
+                    </button>
+                    <button id="deployButton" class="px-8 py-3 bg-gradient-to-r from-green-600 to-blue-600 text-white font-semibold rounded-lg hover:shadow-lg">
+                        <i class="fas fa-rocket mr-2"></i>Deploy Tool
+                    </button>
+                </div>
+
+                <!-- Deployment Status -->
+                <div id="deploymentStatus" class="hidden mt-6">
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-6">
+                        <div class="flex items-center">
+                            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mr-4"></div>
+                            <div>
+                                <p class="font-semibold text-blue-900">Deploying your tool<span class="loading-dots"></span></p>
+                                <p class="text-sm text-blue-700 mt-1">This may take a few moments</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Success Message -->
+                <div id="deploymentSuccess" class="hidden mt-6">
+                    <div class="bg-green-50 border border-green-200 rounded-lg p-6">
+                        <div class="flex items-start">
+                            <i class="fas fa-check-circle text-green-500 text-2xl mr-4"></i>
+                            <div class="flex-1">
+                                <p class="font-semibold text-green-900 mb-2">Tool Deployed Successfully!</p>
+                                <p class="text-sm text-green-700 mb-4">Your tool is now live and ready to use.</p>
+                                <div class="space-y-2">
+                                    <a href="#" id="toolUrl" target="_blank" class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                                        <i class="fas fa-external-link-alt mr-2"></i>View Tool
+                                    </a>
+                                    <button id="createAnotherButton" class="ml-4 px-4 py-2 border border-green-600 text-green-600 rounded-lg hover:bg-green-50">
+                                        Create Another Tool
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Existing Projects -->
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-2xl font-bold">Your Tools</h2>
+                <button id="refreshProjects" class="px-4 py-2 text-gray-600 hover:text-gray-900">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+            </div>
+            <div id="projectsList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Projects will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Field Editor Modal -->
+    <div id="fieldEditorModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <h3 class="text-xl font-bold mb-4">Field Editor</h3>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Field Name</label>
+                    <input type="text" id="fieldName" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Label</label>
+                    <input type="text" id="fieldLabel" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Field Type</label>
+                    <select id="fieldType" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                        <option value="text">Text</option>
+                        <option value="textarea">Textarea</option>
+                        <option value="number">Number</option>
+                        <option value="select">Select (Dropdown)</option>
+                        <option value="multiselect">Multi-select (Checkboxes)</option>
+                        <option value="date">Date</option>
+                        <option value="scale">Scale (1-10)</option>
+                    </select>
+                </div>
+
+                <div id="choicesContainer" class="hidden">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Choices</label>
+                    <div id="choicesList" class="space-y-2">
+                        <!-- Choices will be added here -->
+                    </div>
+                    <button id="addChoiceButton" class="mt-2 px-3 py-1 bg-green-500 text-white text-sm rounded">
+                        <i class="fas fa-plus mr-1"></i>Add Choice
+                    </button>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Placeholder</label>
+                    <input type="text" id="fieldPlaceholder" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Help Text</label>
+                    <input type="text" id="fieldHelpText" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Weight (for calculations)</label>
+                        <input type="number" id="fieldWeight" min="0" max="100" value="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Order</label>
+                        <input type="number" id="fieldOrder" min="1" value="1" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-4">
+                    <label class="flex items-center">
+                        <input type="checkbox" id="fieldRequired" class="mr-2">
+                        <span class="text-sm text-gray-700">Required</span>
+                    </label>
+                    <label class="flex items-center">
+                        <input type="checkbox" id="fieldPremium" class="mr-2">
+                        <span class="text-sm text-gray-700">Premium Field</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="mt-6 flex justify-end space-x-3">
+                <button id="cancelFieldEdit" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+                    Cancel
+                </button>
+                <button id="saveField" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
+                    Save Field
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Help Modal -->
+    <div id="helpModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <h3 class="text-xl font-bold mb-4">How to Use Prompt Engineer v2.0</h3>
+            
+            <div class="space-y-4 text-sm text-gray-700">
+                <div>
+                    <h4 class="font-semibold mb-2">1. Describe Your Tool</h4>
+                    <p>Tell the AI what kind of tool you want to create. Be specific about its purpose, target audience, and functionality.</p>
+                </div>
+                
+                <div>
+                    <h4 class="font-semibold mb-2">2. Configure Fields</h4>
+                    <p>The AI will suggest fields based on your description. You can add, edit, or remove fields as needed. Each field can be configured with validation rules and permissions.</p>
+                </div>
+                
+                <div>
+                    <h4 class="font-semibold mb-2">3. Set Permissions</h4>
+                    <p>Decide which fields should be premium. Free users will see these fields locked with upgrade prompts, creating natural monetization opportunities.</p>
+                </div>
+                
+                <div>
+                    <h4 class="font-semibold mb-2">4. Deploy</h4>
+                    <p>Choose a subdomain and deploy your tool. It will be instantly available at your custom URL.</p>
+                </div>
+
+                <div class="bg-blue-50 p-4 rounded-lg">
+                    <h4 class="font-semibold mb-2">Examples of Tools You Can Create:</h4>
+                    <ul class="list-disc list-inside space-y-1">
+                        <li>Health risk assessments and symptom checkers</li>
+                        <li>Business analysis and planning tools</li>
+                        <li>Story generators and creative writing assistants</li>
+                        <li>Calculators and converters</li>
+                        <li>Quizzes and educational assessments</li>
+                        <li>Decision-making tools and recommendation systems</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="mt-6 flex justify-end">
+                <button onclick="document.getElementById('helpModal').classList.add('hidden')" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
+                    Got it!
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/config.js"></script>
+    <script src="js/prompt-engineer-v2.js"></script>
+</body>
+</html>

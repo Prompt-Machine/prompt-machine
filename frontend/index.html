@@ -3,357 +3,555 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Prompt Machine v1.5.0rc - AI Tool Builder Platform</title>
+    <title>Prompt Machine v2.0.0rc - AI Tool Platform</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: {
-                            50: '#f0f9ff',
-                            100: '#e0f2fe',
-                            200: '#bae6fd',
-                            300: '#7dd3fc',
-                            400: '#38bdf8',
-                            500: '#0ea5e9',
-                            600: '#0284c7',
-                            700: '#0369a1',
-                            800: '#075985',
-                            900: '#0c4a6e'
-                        },
-                        purple: {
-                            500: '#8b5cf6',
-                            600: '#7c3aed',
-                            700: '#6d28d9'
-                        }
-                    },
-                    fontFamily: {
-                        'sans': ['Inter', 'system-ui', 'sans-serif']
-                    },
-                    animation: {
-                        'fade-in': 'fadeIn 0.5s ease-in-out',
-                        'slide-up': 'slideUp 0.6s ease-out',
-                        'bounce-gentle': 'bounceGentle 2s infinite'
-                    }
-                }
-            }
-        }
-    </script>
-    
     <style>
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+        .gradient-text {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
-        
-        @keyframes slideUp {
-            from { 
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to { 
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        @keyframes bounceGentle {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
-        }
-        
-        .gradient-bg {
+        .hero-gradient {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
-        
-        .glass-effect {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        
-        .nav-item:hover {
-            transform: translateY(-2px);
+        .card-hover {
             transition: all 0.3s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+            100% { transform: translateY(0px); }
+        }
+        .float-animation {
+            animation: float 6s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        .pulse-animation {
+            animation: pulse 2s ease-in-out infinite;
+        }
+        .new-badge {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            animation: pulse 2s ease-in-out infinite;
         }
     </style>
 </head>
-<body class="font-sans bg-gray-50">
-
+<body class="bg-gray-50">
     <!-- Navigation -->
-    <nav class="bg-white shadow-lg border-b border-gray-200 sticky top-0 z-50">
+    <nav class="bg-white shadow-sm border-b sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-16">
-                <!-- Logo -->
                 <div class="flex items-center">
-                    <a href="/" class="flex items-center space-x-3">
-                        <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
-                            <i class="fas fa-magic text-white text-lg"></i>
-                        </div>
+                    <a href="/" class="flex items-center">
+                        <i class="fas fa-rocket text-3xl text-purple-600 mr-3"></i>
                         <div>
-                            <h1 class="text-xl font-bold text-gray-900">Prompt Machine</h1>
-                            <p class="text-xs text-gray-500">v1.5.0rc</p>
+                            <span class="text-xl font-bold">Prompt Machine</span>
+                            <span class="ml-2 text-xs new-badge text-white px-2 py-0.5 rounded-full">v2.0.0rc</span>
                         </div>
                     </a>
                 </div>
-                
-                <!-- Desktop Navigation -->
-                <div class="hidden md:flex items-center space-x-8">
-                    <a href="/" class="nav-item text-gray-700 hover:text-blue-600 font-medium">Home</a>
-                    <a href="/tools-directory.html" class="nav-item text-gray-700 hover:text-blue-600 font-medium">Tools Directory</a>
-                    <a href="/early-access.html" class="nav-item text-gray-700 hover:text-blue-600 font-medium">Early Access</a>
-                    <a href="/login.html" class="nav-item bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors">
-                        Login
+                <div class="flex items-center space-x-6">
+                    <a href="/prompt-engineer-v2.html" class="text-gray-600 hover:text-purple-600 transition-colors">
+                        <i class="fas fa-magic mr-2"></i>AI Tools
                     </a>
-                </div>
-                
-                <!-- Mobile menu button -->
-                <div class="md:hidden">
-                    <button id="mobile-menu-button" class="text-gray-700 hover:text-blue-600">
-                        <i class="fas fa-bars text-xl"></i>
+                    <a href="/analytics.html" class="text-gray-600 hover:text-purple-600 transition-colors">
+                        <i class="fas fa-chart-line mr-2"></i>Analytics
+                    </a>
+                    <a href="/packages.html" class="text-gray-600 hover:text-purple-600 transition-colors">
+                        <i class="fas fa-box mr-2"></i>Packages
+                    </a>
+                    <button id="upgradeBtn" class="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all">
+                        <i class="fas fa-crown mr-2"></i>Upgrade
                     </button>
+                    <div class="relative">
+                        <button id="userMenuBtn" class="flex items-center text-gray-600 hover:text-gray-900">
+                            <i class="fas fa-user-circle text-2xl"></i>
+                        </button>
+                        <div id="userMenu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2">
+                            <a href="/profile.html" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
+                                <i class="fas fa-user mr-2"></i>Profile
+                            </a>
+                            <a href="/settings.html" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
+                                <i class="fas fa-cog mr-2"></i>Settings
+                            </a>
+                            <hr class="my-2">
+                            <button onclick="logout()" class="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100">
+                                <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                            </button>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </div>
-        
-        <!-- Mobile Navigation -->
-        <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-gray-200">
-            <div class="px-2 pt-2 pb-3 space-y-1">
-                <a href="/" class="block px-3 py-2 text-gray-700 hover:text-blue-600 font-medium">Home</a>
-                <a href="/tools-directory.html" class="block px-3 py-2 text-gray-700 hover:text-blue-600 font-medium">Tools Directory</a>
-                <a href="/early-access.html" class="block px-3 py-2 text-gray-700 hover:text-blue-600 font-medium">Early Access</a>
-                <a href="/login.html" class="block px-3 py-2 bg-blue-600 text-white rounded-lg font-medium mx-3">Login</a>
             </div>
         </div>
     </nav>
 
     <!-- Hero Section -->
-    <section class="gradient-bg text-white py-20">
+    <section class="hero-gradient text-white py-20">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center animate-fade-in">
-                <h1 class="text-4xl md:text-6xl font-bold mb-6 animate-slide-up">
-                    Build AI Tools
-                    <span class="block bg-gradient-to-r from-yellow-300 to-orange-300 bg-clip-text text-transparent">
-                        Without Code
-                    </span>
-                </h1>
-                <p class="text-xl md:text-2xl mb-8 text-blue-100 max-w-3xl mx-auto animate-slide-up">
-                    Transform your ideas into powerful AI tools with our intuitive platform. 
-                    Create, customize, and deploy intelligent applications in minutes, not months.
-                </p>
-                <div class="flex flex-col sm:flex-row gap-4 justify-center animate-slide-up">
-                    <a href="/early-access.html" class="bg-white text-blue-600 px-8 py-4 rounded-xl font-semibold text-lg hover:bg-blue-50 transition-colors shadow-lg">
-                        Get Early Access
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                <div>
+                    <div class="inline-block">
+                        <span class="inline-flex items-center bg-white/20 backdrop-blur-sm rounded-full px-4 py-1 text-sm mb-6">
+                            <span class="new-badge text-white px-2 py-0.5 rounded-full text-xs mr-2">NEW</span>
+                            v2.0.0rc Released - Universal AI Tools!
+                        </span>
+                    </div>
+                    <h1 class="text-5xl font-bold mb-6">
+                        Create ANY AI Tool<br>
+                        <span class="text-yellow-300">In Minutes</span>
+                    </h1>
+                    <p class="text-xl mb-8 text-white/90">
+                        The most advanced AI tool creation platform. Build professional assessments, creative generators, business tools, and more - all with field-level monetization.
+                    </p>
+                    <div class="flex flex-wrap gap-4">
+                        <a href="/prompt-engineer-v2.html" class="bg-white text-purple-600 px-8 py-4 rounded-lg font-semibold hover:shadow-xl transition-all inline-flex items-center">
+                            <i class="fas fa-magic mr-2"></i>
+                            Start Creating with v2
+                        </a>
+                        <button onclick="playDemo()" class="border-2 border-white text-white px-8 py-4 rounded-lg font-semibold hover:bg-white/10 transition-all inline-flex items-center">
+                            <i class="fas fa-play-circle mr-2"></i>
+                            Watch Demo
+                        </button>
+                    </div>
+                </div>
+                <div class="hidden lg:block">
+                    <div class="float-animation">
+                        <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-8">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="bg-white/10 rounded-lg p-4 text-center">
+                                    <i class="fas fa-infinity text-4xl mb-2"></i>
+                                    <p class="text-sm">Unlimited Tools</p>
+                                </div>
+                                <div class="bg-white/10 rounded-lg p-4 text-center">
+                                    <i class="fas fa-brain text-4xl mb-2"></i>
+                                    <p class="text-sm">AI Powered</p>
+                                </div>
+                                <div class="bg-white/10 rounded-lg p-4 text-center">
+                                    <i class="fas fa-lock text-4xl mb-2"></i>
+                                    <p class="text-sm">Field Permissions</p>
+                                </div>
+                                <div class="bg-white/10 rounded-lg p-4 text-center">
+                                    <i class="fas fa-chart-line text-4xl mb-2"></i>
+                                    <p class="text-sm">Pro Analytics</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="py-12 bg-white border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+                <div class="text-center">
+                    <div class="text-3xl font-bold text-purple-600" id="toolCount">0</div>
+                    <div class="text-gray-600">Tools Created</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl font-bold text-blue-600" id="deployedCount">0</div>
+                    <div class="text-gray-600">Deployed</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl font-bold text-green-600" id="fieldCount">0</div>
+                    <div class="text-gray-600">Total Fields</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl font-bold text-yellow-600" id="premiumFieldCount">0</div>
+                    <div class="text-gray-600">Premium Fields</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Dashboard -->
+    <section class="py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <!-- Quick Actions -->
+            <div class="mb-12">
+                <h2 class="text-2xl font-bold mb-6">Quick Actions</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <!-- Create New Tool Card -->
+                    <a href="/prompt-engineer-v2.html" class="card-hover bg-white rounded-xl p-6 border-2 border-purple-200 hover:border-purple-400">
+                        <div class="text-center">
+                            <div class="bg-gradient-to-r from-purple-600 to-blue-600 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                                <i class="fas fa-plus text-white text-2xl"></i>
+                            </div>
+                            <h3 class="font-semibold text-lg mb-2">Create New Tool</h3>
+                            <p class="text-gray-600 text-sm">Build any AI tool with v2.0</p>
+                            <span class="inline-block mt-3 text-purple-600 font-medium">
+                                Start Creating →
+                            </span>
+                        </div>
                     </a>
-                    <a href="/tools-directory.html" class="glass-effect text-white px-8 py-4 rounded-xl font-semibold text-lg hover:bg-white hover:bg-opacity-20 transition-colors">
-                        Explore Tools
+
+                    <!-- Legacy Builder Card -->
+                    <a href="/prompt-engineer-v6.html" class="card-hover bg-white rounded-xl p-6 border hover:shadow-lg">
+                        <div class="text-center">
+                            <div class="bg-gray-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                                <i class="fas fa-tools text-gray-600 text-2xl"></i>
+                            </div>
+                            <h3 class="font-semibold text-lg mb-2">Legacy Builder</h3>
+                            <p class="text-gray-600 text-sm">Use classic v6 interface</p>
+                            <span class="inline-block mt-3 text-gray-600 font-medium">
+                                Open v6 →
+                            </span>
+                        </div>
+                    </a>
+
+                    <!-- View Analytics Card -->
+                    <a href="/analytics.html" class="card-hover bg-white rounded-xl p-6 border hover:shadow-lg">
+                        <div class="text-center">
+                            <div class="bg-blue-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                                <i class="fas fa-chart-bar text-blue-600 text-2xl"></i>
+                            </div>
+                            <h3 class="font-semibold text-lg mb-2">Analytics</h3>
+                            <p class="text-gray-600 text-sm">Track tool performance</p>
+                            <span class="inline-block mt-3 text-blue-600 font-medium">
+                                View Stats →
+                            </span>
+                        </div>
+                    </a>
+
+                    <!-- Manage Packages Card -->
+                    <a href="/packages.html" class="card-hover bg-white rounded-xl p-6 border hover:shadow-lg">
+                        <div class="text-center">
+                            <div class="bg-green-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                                <i class="fas fa-box-open text-green-600 text-2xl"></i>
+                            </div>
+                            <h3 class="font-semibold text-lg mb-2">Packages</h3>
+                            <p class="text-gray-600 text-sm">Manage subscriptions</p>
+                            <span class="inline-block mt-3 text-green-600 font-medium">
+                                Manage →
+                            </span>
+                        </div>
                     </a>
                 </div>
             </div>
+
+            <!-- Recent Tools -->
+            <div class="mb-12">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold">Your Recent Tools</h2>
+                    <a href="/prompt-engineer-v2.html#projects" class="text-purple-600 hover:text-purple-700 font-medium">
+                        View All →
+                    </a>
+                </div>
+                <div id="recentTools" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Tools will be loaded here -->
+                    <div class="bg-gray-100 rounded-xl p-8 text-center">
+                        <i class="fas fa-spinner fa-spin text-4xl text-gray-400 mb-4"></i>
+                        <p class="text-gray-500">Loading tools...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- What's New Section -->
+            <div class="bg-gradient-to-r from-purple-100 to-blue-100 rounded-xl p-8">
+                <h2 class="text-2xl font-bold mb-6">🎉 What's New in v2.0.0rc</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="bg-white rounded-lg p-6">
+                        <i class="fas fa-infinity text-3xl text-purple-600 mb-3"></i>
+                        <h3 class="font-semibold mb-2">Universal Tool Creation</h3>
+                        <p class="text-gray-600 text-sm">Create ANY type of AI tool - assessments, generators, utilities, business tools, and more!</p>
+                    </div>
+                    <div class="bg-white rounded-lg p-6">
+                        <i class="fas fa-lock text-3xl text-blue-600 mb-3"></i>
+                        <h3 class="font-semibold mb-2">Field-Level Permissions</h3>
+                        <p class="text-gray-600 text-sm">Monetize individual fields with natural upgrade paths. Revolutionary granular control!</p>
+                    </div>
+                    <div class="bg-white rounded-lg p-6">
+                        <i class="fas fa-brain text-3xl text-green-600 mb-3"></i>
+                        <h3 class="font-semibold mb-2">AI-Powered Generation</h3>
+                        <p class="text-gray-600 text-sm">Describe your tool and let AI create the perfect structure, fields, and calculations.</p>
+                    </div>
+                </div>
+            </div>
         </div>
     </section>
 
-    <!-- Features Section -->
-    <section class="py-20 bg-white">
+    <!-- Feature Comparison -->
+    <section class="py-12 bg-white">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center mb-16">
-                <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-                    Why Choose Prompt Machine?
-                </h2>
-                <p class="text-xl text-gray-600 max-w-3xl mx-auto">
-                    Our platform makes AI tool creation accessible to everyone, from entrepreneurs to enterprises.
-                </p>
+            <h2 class="text-2xl font-bold text-center mb-8">Version Comparison</h2>
+            <div class="max-w-4xl mx-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="border-b">
+                            <th class="text-left py-4">Feature</th>
+                            <th class="text-center py-4">v1.5 (Legacy)</th>
+                            <th class="text-center py-4 bg-purple-50">v2.0 (New)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="border-b">
+                            <td class="py-4">Tool Types</td>
+                            <td class="text-center"><span class="text-gray-500">Fixed Templates</span></td>
+                            <td class="text-center bg-purple-50"><span class="text-purple-600 font-semibold">Unlimited Types</span></td>
+                        </tr>
+                        <tr class="border-b">
+                            <td class="py-4">Field Permissions</td>
+                            <td class="text-center"><span class="text-gray-500">All or Nothing</span></td>
+                            <td class="text-center bg-purple-50"><span class="text-purple-600 font-semibold">Granular Control</span></td>
+                        </tr>
+                        <tr class="border-b">
+                            <td class="py-4">AI Assistance</td>
+                            <td class="text-center"><span class="text-gray-500">Basic</span></td>
+                            <td class="text-center bg-purple-50"><span class="text-purple-600 font-semibold">Full Generation</span></td>
+                        </tr>
+                        <tr class="border-b">
+                            <td class="py-4">Calculations</td>
+                            <td class="text-center"><span class="text-gray-500">Simple</span></td>
+                            <td class="text-center bg-purple-50"><span class="text-purple-600 font-semibold">Professional</span></td>
+                        </tr>
+                        <tr class="border-b">
+                            <td class="py-4">Monetization</td>
+                            <td class="text-center"><span class="text-gray-500">Basic Ads</span></td>
+                            <td class="text-center bg-purple-50"><span class="text-purple-600 font-semibold">Smart Upgrades</span></td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <!-- Feature 1 -->
-                <div class="bg-gray-50 rounded-2xl p-8 hover:shadow-lg transition-shadow">
-                    <div class="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mb-6 animate-bounce-gentle">
-                        <i class="fas fa-rocket text-blue-600 text-2xl"></i>
-                    </div>
-                    <h3 class="text-xl font-semibold text-gray-900 mb-4">Launch Fast</h3>
-                    <p class="text-gray-600">
-                        Deploy your AI tools instantly with our one-click deployment system. 
-                        From idea to live tool in minutes.
-                    </p>
-                </div>
-                
-                <!-- Feature 2 -->
-                <div class="bg-gray-50 rounded-2xl p-8 hover:shadow-lg transition-shadow">
-                    <div class="w-16 h-16 bg-purple-100 rounded-2xl flex items-center justify-center mb-6 animate-bounce-gentle" style="animation-delay: 0.2s;">
-                        <i class="fas fa-palette text-purple-600 text-2xl"></i>
-                    </div>
-                    <h3 class="text-xl font-semibold text-gray-900 mb-4">Full Customization</h3>
-                    <p class="text-gray-600">
-                        Design exactly what you need with our flexible form builder, 
-                        custom AI personas, and advanced prompt engineering.
-                    </p>
-                </div>
-                
-                <!-- Feature 3 -->
-                <div class="bg-gray-50 rounded-2xl p-8 hover:shadow-lg transition-shadow">
-                    <div class="w-16 h-16 bg-green-100 rounded-2xl flex items-center justify-center mb-6 animate-bounce-gentle" style="animation-delay: 0.4s;">
-                        <i class="fas fa-chart-line text-green-600 text-2xl"></i>
-                    </div>
-                    <h3 class="text-xl font-semibold text-gray-900 mb-4">Analytics & Insights</h3>
-                    <p class="text-gray-600">
-                        Track usage, monitor performance, and optimize your tools with 
-                        detailed analytics and real-time insights.
-                    </p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- How It Works -->
-    <section class="py-20 bg-gray-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center mb-16">
-                <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-                    How It Works
-                </h2>
-                <p class="text-xl text-gray-600">
-                    Three simple steps to create your AI-powered tool
-                </p>
-            </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <!-- Step 1 -->
-                <div class="text-center">
-                    <div class="w-20 h-20 bg-blue-600 text-white rounded-full flex items-center justify-center mx-auto mb-6 text-2xl font-bold">
-                        1
-                    </div>
-                    <h3 class="text-xl font-semibold text-gray-900 mb-4">Design Your Tool</h3>
-                    <p class="text-gray-600">
-                        Use our intuitive interface to create forms, define AI behavior, 
-                        and set up your tool's functionality.
-                    </p>
-                </div>
-                
-                <!-- Step 2 -->
-                <div class="text-center">
-                    <div class="w-20 h-20 bg-purple-600 text-white rounded-full flex items-center justify-center mx-auto mb-6 text-2xl font-bold">
-                        2
-                    </div>
-                    <h3 class="text-xl font-semibold text-gray-900 mb-4">Customize & Test</h3>
-                    <p class="text-gray-600">
-                        Fine-tune your AI prompts, customize the interface, 
-                        and test everything before going live.
-                    </p>
-                </div>
-                
-                <!-- Step 3 -->
-                <div class="text-center">
-                    <div class="w-20 h-20 bg-green-600 text-white rounded-full flex items-center justify-center mx-auto mb-6 text-2xl font-bold">
-                        3
-                    </div>
-                    <h3 class="text-xl font-semibold text-gray-900 mb-4">Deploy & Share</h3>
-                    <p class="text-gray-600">
-                        Launch your tool with a custom URL and start sharing it with your audience. 
-                        Monitor usage and iterate.
-                    </p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- CTA Section -->
-    <section class="py-20 bg-blue-600 text-white">
-        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h2 class="text-3xl md:text-4xl font-bold mb-6">
-                Ready to Build Your First AI Tool?
-            </h2>
-            <p class="text-xl mb-8 text-blue-100">
-                Join thousands of creators who are building the future with AI
-            </p>
-            <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                <a href="/early-access.html" class="bg-white text-blue-600 px-8 py-4 rounded-xl font-semibold text-lg hover:bg-blue-50 transition-colors">
-                    Get Early Access
-                </a>
-                <a href="/tools-directory.html" class="bg-blue-700 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:bg-blue-800 transition-colors">
-                    Browse Tools
+            <div class="text-center mt-8">
+                <a href="/prompt-engineer-v2.html" class="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:shadow-lg transition-all inline-flex items-center">
+                    <i class="fas fa-rocket mr-2"></i>
+                    Try v2.0.0rc Now
                 </a>
             </div>
         </div>
     </section>
 
     <!-- Footer -->
-    <footer class="bg-gray-900 text-white py-12">
+    <footer class="bg-gray-900 text-gray-300 py-12">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
-                <div class="md:col-span-2">
-                    <div class="flex items-center space-x-3 mb-4">
-                        <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-magic text-white text-sm"></i>
-                        </div>
-                        <div>
-                            <h3 class="text-lg font-bold">Prompt Machine</h3>
-                            <p class="text-xs text-gray-400">v1.5.0rc</p>
-                        </div>
-                    </div>
-                    <p class="text-gray-400 mb-4">
-                        Empowering creators to build AI tools without code. 
-                        Transform your ideas into powerful applications.
-                    </p>
-                </div>
-                
                 <div>
-                    <h4 class="font-semibold mb-4">Platform</h4>
-                    <ul class="space-y-2 text-gray-400">
-                        <li><a href="/tools-directory.html" class="hover:text-white transition-colors">Tools Directory</a></li>
-                        <li><a href="/early-access.html" class="hover:text-white transition-colors">Early Access</a></li>
-                        <li><a href="/login.html" class="hover:text-white transition-colors">Login</a></li>
+                    <div class="flex items-center mb-4">
+                        <i class="fas fa-rocket text-2xl text-purple-500 mr-2"></i>
+                        <span class="text-white font-bold text-lg">Prompt Machine</span>
+                    </div>
+                    <p class="text-sm">The most advanced AI tool creation platform.</p>
+                </div>
+                <div>
+                    <h4 class="text-white font-semibold mb-4">Product</h4>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="/prompt-engineer-v2.html" class="hover:text-white">Create Tools</a></li>
+                        <li><a href="/analytics.html" class="hover:text-white">Analytics</a></li>
+                        <li><a href="/packages.html" class="hover:text-white">Pricing</a></li>
+                        <li><a href="/docs.html" class="hover:text-white">Documentation</a></li>
                     </ul>
                 </div>
-                
                 <div>
-                    <h4 class="font-semibold mb-4">Support</h4>
-                    <ul class="space-y-2 text-gray-400">
-                        <li><a href="#" class="hover:text-white transition-colors">Documentation</a></li>
-                        <li><a href="#" class="hover:text-white transition-colors">Help Center</a></li>
-                        <li><a href="#" class="hover:text-white transition-colors">Contact Us</a></li>
+                    <h4 class="text-white font-semibold mb-4">Resources</h4>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="/templates.html" class="hover:text-white">Templates</a></li>
+                        <li><a href="/tutorials.html" class="hover:text-white">Tutorials</a></li>
+                        <li><a href="/api-docs.html" class="hover:text-white">API Docs</a></li>
+                        <li><a href="/changelog.html" class="hover:text-white">Changelog</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-white font-semibold mb-4">Company</h4>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="/about.html" class="hover:text-white">About</a></li>
+                        <li><a href="/contact.html" class="hover:text-white">Contact</a></li>
+                        <li><a href="/privacy.html" class="hover:text-white">Privacy</a></li>
+                        <li><a href="/terms.html" class="hover:text-white">Terms</a></li>
                     </ul>
                 </div>
             </div>
-            
-            <div class="border-t border-gray-800 pt-8 mt-8 text-center text-gray-400">
-                <p>&copy; 2025 Prompt Machine. All rights reserved.</p>
+            <div class="mt-8 pt-8 border-t border-gray-800 text-center text-sm">
+                <p>&copy; 2024 Prompt Machine v2.0.0rc. Powered by AI.</p>
             </div>
         </div>
     </footer>
 
+    <!-- Scripts -->
     <script>
-        // Mobile menu toggle
-        document.getElementById('mobile-menu-button').addEventListener('click', function() {
-            const mobileMenu = document.getElementById('mobile-menu');
-            mobileMenu.classList.toggle('hidden');
+        // Check authentication
+        function checkAuth() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = '/login.html';
+                return false;
+            }
+            return true;
+        }
+
+        // Logout function
+        function logout() {
+            localStorage.removeItem('token');
+            window.location.href = '/login.html';
+        }
+
+        // User menu toggle
+        document.getElementById('userMenuBtn')?.addEventListener('click', function() {
+            document.getElementById('userMenu').classList.toggle('hidden');
         });
 
-        // Smooth scrolling for anchor links
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    target.scrollIntoView({
-                        behavior: 'smooth'
-                    });
+        // Close user menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const userMenu = document.getElementById('userMenu');
+            const userMenuBtn = document.getElementById('userMenuBtn');
+            if (userMenu && !userMenu.contains(event.target) && !userMenuBtn.contains(event.target)) {
+                userMenu.classList.add('hidden');
+            }
+        });
+
+        // Load dashboard stats
+        async function loadDashboardStats() {
+            try {
+                const response = await fetch('/api/v2/dashboard/stats', {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    // Animate counters
+                    animateCounter('toolCount', data.toolCount || 0);
+                    animateCounter('deployedCount', data.deployedCount || 0);
+                    animateCounter('fieldCount', data.fieldCount || 0);
+                    animateCounter('premiumFieldCount', data.premiumFieldCount || 0);
                 }
-            });
-        });
+            } catch (error) {
+                console.error('Failed to load stats:', error);
+            }
+        }
 
-        // Add loading animation
-        window.addEventListener('load', function() {
-            document.body.classList.add('loaded');
+        // Animate counter
+        function animateCounter(id, target) {
+            const element = document.getElementById(id);
+            if (!element) return;
+            
+            let current = 0;
+            const increment = target / 30;
+            const timer = setInterval(() => {
+                current += increment;
+                if (current >= target) {
+                    current = target;
+                    clearInterval(timer);
+                }
+                element.textContent = Math.floor(current).toLocaleString();
+            }, 50);
+        }
+
+        // Load recent tools
+        async function loadRecentTools() {
+            try {
+                const response = await fetch('/api/v2/prompt-engineer/projects?limit=3', {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const container = document.getElementById('recentTools');
+                    
+                    if (data.data && data.data.length > 0) {
+                        container.innerHTML = data.data.map(tool => `
+                            <div class="card-hover bg-white rounded-xl p-6 border hover:shadow-lg">
+                                <div class="flex justify-between items-start mb-4">
+                                    <h3 class="font-semibold text-lg">${tool.name}</h3>
+                                    ${tool.deployed ? 
+                                        '<span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">Live</span>' :
+                                        '<span class="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded">Draft</span>'
+                                    }
+                                </div>
+                                <p class="text-gray-600 text-sm mb-4 line-clamp-2">${tool.description || 'No description'}</p>
+                                <div class="flex justify-between items-center text-sm text-gray-500">
+                                    <span>${tool.field_count || 0} fields</span>
+                                    <span>${tool.tool_type || 'Custom'}</span>
+                                </div>
+                                <div class="mt-4 pt-4 border-t flex gap-2">
+                                    <a href="/prompt-engineer-v2.html#edit/${tool.id}" class="flex-1 text-center px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm">
+                                        Edit
+                                    </a>
+                                    ${tool.deployed ? 
+                                        `<a href="https://${tool.subdomain}.tool.prompt-machine.com" target="_blank" class="flex-1 text-center px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm">
+                                            View
+                                        </a>` :
+                                        `<button onclick="deployTool('${tool.id}')" class="flex-1 px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm">
+                                            Deploy
+                                        </button>`
+                                    }
+                                </div>
+                            </div>
+                        `).join('');
+                    } else {
+                        container.innerHTML = `
+                            <div class="col-span-full bg-gray-100 rounded-xl p-12 text-center">
+                                <i class="fas fa-inbox text-6xl text-gray-400 mb-4"></i>
+                                <h3 class="text-xl font-semibold text-gray-600 mb-2">No tools yet</h3>
+                                <p class="text-gray-500 mb-6">Create your first AI tool to get started</p>
+                                <a href="/prompt-engineer-v2.html" class="inline-block bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700">
+                                    <i class="fas fa-plus mr-2"></i>Create Your First Tool
+                                </a>
+                            </div>
+                        `;
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to load recent tools:', error);
+                document.getElementById('recentTools').innerHTML = `
+                    <div class="col-span-full bg-red-50 text-red-600 rounded-xl p-6">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>
+                        Failed to load tools. Please refresh the page.
+                    </div>
+                `;
+            }
+        }
+
+        // Deploy tool function
+        async function deployTool(toolId) {
+            if (!confirm('Deploy this tool to production?')) return;
+            
+            try {
+                const response = await fetch(`/api/v2/prompt-engineer/projects/${toolId}/deploy`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    alert(`Tool deployed successfully! View at: ${data.data.url}`);
+                    loadRecentTools();
+                } else {
+                    alert('Failed to deploy tool. Please try again.');
+                }
+            } catch (error) {
+                console.error('Deploy error:', error);
+                alert('Failed to deploy tool. Please try again.');
+            }
+        }
+
+        // Play demo function
+        function playDemo() {
+            alert('Demo video coming soon! For now, click "Start Creating with v2" to explore the new features.');
+        }
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', function() {
+            if (checkAuth()) {
+                loadDashboardStats();
+                loadRecentTools();
+            }
         });
     </script>
-
 </body>
 </html>

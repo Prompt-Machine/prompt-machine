@@ -15,6 +15,9 @@ const {
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Enable trust proxy for nginx reverse proxy
+app.set('trust proxy', true);
+
 // Database connection
 const pool = new Pool({
     host: process.env.DB_HOST,
@@ -80,6 +83,8 @@ const aiConfigRoutes = require('./routes/ai-config');
 const toolsV3Routes = require('./routes/toolsV3');
 // V4 and V5 routes removed in v1.5.0rc - now using V6 only
 const promptEngineerV6Routes = require('./routes/promptEngineerV6');
+const promptEngineerV2Routes = require('./routes/promptEngineerV2');
+const dashboardV2Routes = require('./routes/dashboardV2');
 const advertisingRoutes = require('./routes/advertising');
 const analyticsRoutes = require('./routes/analytics_enhanced');
 const userManagerRoutes = require('./routes/userManager');
@@ -100,6 +105,8 @@ app.use('/api/advertising', advertisingRoutes); // Advertising management
 app.use('/api/v3', toolsV3Routes); // Production v3 wizard system (reference)
 // V4 and V5 API routes removed in v1.5.0rc - all functionality moved to V6
 app.use('/api/v6', toolGenerationRateLimit, promptEngineerV6Routes); // V6 multi-step project builder system
+app.use('/api/v2/prompt-engineer', promptEngineerV2Routes); // V2 universal tool creator
+app.use('/api/v2/dashboard', dashboardV2Routes); // V2 dashboard endpoints
 app.use('/api/analytics', analyticsRateLimit, analyticsRoutes); // Analytics and usage tracking
 app.use('/api/users', userManagerRoutes); // User management and permissions
 app.use('/api/packages', packagesRoutes); // Package management for subscriptions

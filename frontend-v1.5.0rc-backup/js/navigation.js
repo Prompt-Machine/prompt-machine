@@ -16,7 +16,6 @@ class NavigationManager {
         if (path.includes('user-panel.html')) return 'dashboard';
         if (path.includes('index.html') || path === '/' || path === '') return 'home';
         if (path.includes('prompt-engineer-v6.html')) return 'create-project';
-        if (path.includes('prompt-engineer-v2.html')) return 'create-project-v2';
         if (path.includes('prompt-engineer-rc.html')) return 'create-project-rc';
         if (path.includes('analytics-dashboard.html')) return 'analytics';
         if (path.includes('advertising-settings.html')) return 'advertising';
@@ -94,10 +93,6 @@ class NavigationManager {
                     </a>
                     <a href="/prompt-engineer-v6.html" class="text-gray-700 hover:text-blue-600 font-medium transition-colors">
                         <i class="fas fa-plus mr-2"></i>Create Tool
-                    </a>
-                    <a href="/prompt-engineer-v2.html" class="text-gray-700 hover:text-blue-600 font-medium transition-colors">
-                        <i class="fas fa-magic mr-2"></i>Prompt Engineer v2
-                        <span class="ml-1 bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">NEW</span>
                     </a>
                     <a href="/analytics-dashboard.html" class="text-gray-700 hover:text-blue-600 font-medium transition-colors">
                         <i class="fas fa-chart-line mr-2"></i>Analytics
@@ -213,11 +208,6 @@ class NavigationManager {
                         <i class="fas fa-plus mr-3"></i>
                         Prompt Engineer V6
                         <span class="ml-auto bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">Active</span>
-                    </a>
-                    <a href="prompt-engineer-v2.html" onclick="toggleMobileMenu()" class="w-full flex items-center px-3 py-3 rounded-lg text-sm font-medium transition-colors ${this.currentPage === 'create-project-v2' ? 'text-blue-600 bg-blue-50' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100'}">
-                        <i class="fas fa-magic mr-3"></i>
-                        Prompt Engineer v2
-                        <span class="ml-auto bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">NEW</span>
                     </a>
                 </div>
 

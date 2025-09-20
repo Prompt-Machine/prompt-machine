@@ -11,14 +11,8 @@ const createRateLimit = (windowMs, max, message, skipSuccessfulRequests = false)
         standardHeaders: true,
         legacyHeaders: false,
         skipSuccessfulRequests,
-        keyGenerator: (req) => {
-            // Use IP + user ID if authenticated, otherwise just IP
-            const userKey = req.user?.id || '';
-            const ip = req.ip || req.connection.remoteAddress || 'unknown';
-            // Handle IPv6 addresses properly
-            const cleanIp = ip.replace(/^::ffff:/, '');
-            return `${cleanIp}:${userKey}`;
-        },
+        // Trust proxy setting for rate limiter
+        trustProxy: true,
         handler: (req, res) => {
             res.status(429).json({
                 success: false,

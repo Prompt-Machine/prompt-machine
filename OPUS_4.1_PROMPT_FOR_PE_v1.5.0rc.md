@@ -2,7 +2,22 @@
 
 ## MISSION: Advanced AI-Powered Assessment Tool Creator with Field-Level Permissions
 
-You are tasked with creating **Prompt Engineer v1.5.0rc** - a revolutionary tool that combines AI-powered flexibility with professional assessment capabilities (like your pregnancy tool) but for ANY domain, with sophisticated field-level permission control.
+You are tasked with creating **Prompt Engineer v2.0.0rc** (next major version) - a revolutionary tool that combines AI-powered flexibility with professional assessment capabilities (like your pregnancy tool) but for ANY domain, with sophisticated field-level permission control.
+
+## 📁 GITHUB REPOSITORY ACCESS
+
+**Repository**: https://github.com/Prompt-Machine/prompt-machine
+**Current Stable Branch**: `stable-v1.5.0rc` (contains all current working code)
+**Target Branch**: `main` (will become v2.0.0rc)
+
+You have full access to review our entire codebase to:
+- Understand implementation patterns better than the documentation below
+- See actual working examples of our authentication system
+- Review current database schema implementations
+- Understand our deployment and tool generation systems
+- Identify any patterns or conventions I might have missed
+
+**Feel free to examine the repository thoroughly** - this will give you complete context of how our system actually works vs. just the documentation I've provided.
 
 ---
 
@@ -382,9 +397,32 @@ const calculateResult = (responses, userPackage) => {
 
 ---
 
+## 🌟 DEVELOPMENT STRATEGY
+
+### **Version Approach:**
+- **Current**: v1.5.0rc (stable, preserved in `stable-v1.5.0rc` branch)  
+- **Target**: v2.0.0rc (revolutionary upgrade, will become new `main`)
+- **Philosophy**: Complete reimagining while maintaining full backward compatibility
+
+### **Your Freedom:**
+You have complete creative freedom to:
+- Reorganize code structure if you see better patterns
+- Add any additional features you think would enhance the system
+- Improve our database schema design
+- Enhance security or performance beyond what we've built
+- Create additional tools or utilities that would benefit the platform
+
+### **Key Goals:**
+1. **Preserve what works**: Don't break existing functionality
+2. **Revolutionary upgrade**: Make this the most advanced AI tool platform ever
+3. **Future-proof**: Design for scalability and additional features
+4. **Professional grade**: Enterprise-level code quality and documentation
+
+---
+
 ## 🚀 FINAL REQUEST
 
-Create a complete, production-ready **Prompt Engineer v1.5.0rc** that revolutionizes how AI assessment tools are created and monetized. Include all files, API endpoints, database migrations, and detailed deployment instructions.
+Create a complete, production-ready **Prompt Engineer v2.0.0rc** that revolutionizes how AI assessment tools are created and monetized. Include all files, API endpoints, database migrations, and detailed deployment instructions.
 
 **Remember**: This must work with our exact server stack and integrate perfectly with the existing system. The field-level permission system is the game-changing feature that will drive revenue through natural upgrade paths.
 
