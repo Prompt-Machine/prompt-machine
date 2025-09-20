@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prompt Machine - Admin Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts@3.44.0/dist/apexcharts.min.js"></script>
+</head>
+<body class="bg-gray-100">
+    <!-- Main Navigation -->
+    <nav class="bg-indigo-600 text-white shadow-lg">
+        <div class="px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <h1 class="text-xl font-bold">🚀 Prompt Machine</h1>
+                    <span class="ml-3 px-2 py-1 text-xs bg-indigo-500 rounded">v2.0.0 SAAS</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button class="p-2 rounded-md hover:bg-indigo-500" onclick="toggleNotifications()">
+                        <i class="fas fa-bell"></i>
+                        <span id="notification-badge" class="absolute -mt-6 -mr-2 px-1.5 py-0.5 text-xs bg-red-500 rounded-full">3</span>
+                    </button>
+                    <div class="relative">
+                        <button onclick="toggleUserMenu()" class="flex items-center space-x-2 hover:bg-indigo-500 rounded-md p-2">
+                            <img class="h-8 w-8 rounded-full" src="https://ui-avatars.com/api/?name=Admin&background=4f46e5&color=fff" alt="Admin">
+                            <span>Admin</span>
+                            <i class="fas fa-chevron-down text-xs"></i>
+                        </button>
+                        <div id="user-menu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
+                            <a href="#profile" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                <i class="fas fa-user mr-2"></i> Profile
+                            </a>
+                            <a href="#settings" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                <i class="fas fa-cog mr-2"></i> Settings
+                            </a>
+                            <hr class="my-1">
+                            <a href="/logout" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                <i class="fas fa-sign-out-alt mr-2"></i> Logout
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="flex h-screen bg-gray-100">
+        <!-- Sidebar Navigation -->
+        <aside class="w-64 bg-white shadow-md">
+            <div class="p-4">
+                <ul class="space-y-2">
+                    <li>
+                        <a href="#dashboard" class="flex items-center space-x-3 text-gray-700 p-2 rounded-lg hover:bg-gray-100 font-medium">
+                            <i class="fas fa-tachometer-alt"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                    <li>
+                        <button onclick="toggleSubmenu('tools-menu')" class="w-full flex items-center justify-between text-gray-700 p-2 rounded-lg hover:bg-gray-100">
+                            <div class="flex items-center space-x-3">
+                                <i class="fas fa-tools"></i>
+                                <span>Tools Management</span>
+                            </div>
+                            <i class="fas fa-chevron-down text-xs"></i>
+                        </button>
+                        <ul id="tools-menu" class="ml-6 mt-2 space-y-1 hidden">
+                            <li><a href="/prompt-engineer-v2.html" class="block p-2 text-sm text-gray-600 hover:bg-gray-100 rounded">Prompt Engineer</a></li>
+                            <li><a href="#my-tools" class="block p-2 text-sm text-gray-600 hover:bg-gray-100 rounded">My Tools</a></li>
+                            <li><a href="#tool-library" class="block p-2 text-sm text-gray-600 hover:bg-gray-100 rounded">Tool Library</a></li>
+                            <li><a href="#deployments" class="block p-2 text-sm text-gray-600 hover:bg-gray-100 rounded">Deployments</a></li>
+                            <li><a href="#versions" class="block p-2 text-sm text-gray-600 hover:bg-gray-100 rounded">Version Control</a></li>
+                        </ul>
+                    </li>
+                    <li>
+                        <button onclick="toggleSubmenu('users-menu')" class="w-full flex items-center justify-between text-gray-700 p-2 rounded-lg hover:bg-gray-100">
+                            <div class="flex items-center space-x-3">
+                                <i class="fas fa-users"></i>
+                                <span>User Management</span>
+                            </div>
+                            <i class="fas fa-chevron-down text-xs"></i>
+                        </button>
+                        <ul id="users-menu" class="ml-6 mt-2 space-y-1 hidden">
+                            <li><a href="#all-users" class="block p-2 text-sm text-gray-600 hover:bg-gray-100 rounded">All Users</a></li>
+                            <li><a href="#roles" class="block p-2 text-sm text-gray-600 hover:bg-gray-100 rounded">Roles & Permissions</a></li>
+                            <li><a href="#teams" class="block p-2 text-sm text-gray-600 hover:bg-gray-100 rounded">Teams</a></li>
+                            <li><a href="#invitations" class="block p-2 text-sm text-gray-600 hover:bg-gray-100 rounded">Invitations</a></li>
+                        </ul>
+                    </li>
+                    <li>
+                        <button onclick="toggleSubmenu('clients-menu')" class="w-full flex items-center justify-between text-gray-700 p-2 rounded-lg hover:bg-gray-100">
+                            <div class="flex items-center space-x-3">
+                                <i class="fas fa-building"></i>
+                                <span>Client Management</span>
+                            </div>
+                            <i class="fas fa-chevron-down text-xs"></i>
+                        </button>
+                        <ul id="clients-menu" class="ml-6 mt-2 space-y-1 hidden">
+                            <li><a href="#all-clients" class="block p-2 text-sm text-gray-600 hover:bg-gray-100 rounded">All Clients</a></li>
+                            <li><a href="#contracts" class="block p-2 text-sm text-gray-600 hover:bg-gray-100 rounded">Contracts</a></li>
+                            <li><a href="#workspaces" class="block p-2 text-sm text-gray-600 hover:bg-gray-100 rounded">Workspaces</a></li>
+                        </ul>
+                    </li>
+                    <li>
+                        <button onclick="toggleSubmenu('billing-menu')" class="w-full flex items-center justify-between text-gray-700 p-2 rounded-lg hover:bg-gray-100">
+                            <div class="flex items-center space-x-3">
+                                <i class="fas fa-credit-card"></i>
+                                <span>Billing & Subscriptions</span>
+                            </div>
+                            <i class="fas fa-chevron-down text-xs"></i>
+                        </button>
+                        <ul id="billing-menu" class="ml-6 mt-2 space-y-1 hidden">
+                            <li><a href="#subscriptions" class="block p-2 text-sm text-gray-600 hover:bg-gray-100 rounded">Active Subscriptions</a></li>
+                            <li><a href="#plans" class="block p-2 text-sm text-gray-600 hover:bg-gray-100 rounded">Pricing Plans</a></li>
+                            <li><a href="#invoices" class="block p-2 text-sm text-gray-600 hover:bg-gray-100 rounded">Invoices</a></li>
+                            <li><a href="#payment-methods" class="block p-2 text-sm text-gray-600 hover:bg-gray-100 rounded">Payment Methods</a></li>
+                            <li><a href="#revenue" class="block p-2 text-sm text-gray-600 hover:bg-gray-100 rounded">Revenue Reports</a></li>
+                        </ul>
+                    </li>
+                    <li>
+                        <a href="#analytics" class="flex items-center space-x-3 text-gray-700 p-2 rounded-lg hover:bg-gray-100">
+                            <i class="fas fa-chart-line"></i>
+                            <span>Analytics</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#marketplace" class="flex items-center space-x-3 text-gray-700 p-2 rounded-lg hover:bg-gray-100">
+                            <i class="fas fa-store"></i>
+                            <span>Marketplace</span>
+                            <span class="ml-auto px-2 py-1 text-xs bg-green-500 text-white rounded">NEW</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#advertising" class="flex items-center space-x-3 text-gray-700 p-2 rounded-lg hover:bg-gray-100">
+                            <i class="fas fa-ad"></i>
+                            <span>Advertising</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#reports" class="flex items-center space-x-3 text-gray-700 p-2 rounded-lg hover:bg-gray-100">
+                            <i class="fas fa-file-alt"></i>
+                            <span>Reports</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#support" class="flex items-center space-x-3 text-gray-700 p-2 rounded-lg hover:bg-gray-100">
+                            <i class="fas fa-headset"></i>
+                            <span>Support Tickets</span>
+                            <span class="ml-auto px-2 py-1 text-xs bg-red-500 text-white rounded">5</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#settings" class="flex items-center space-x-3 text-gray-700 p-2 rounded-lg hover:bg-gray-100">
+                            <i class="fas fa-cog"></i>
+                            <span>System Settings</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 overflow-y-auto">
+            <div class="p-6">
+                <!-- Dashboard Header -->
+                <div class="mb-6">
+                    <h2 class="text-2xl font-bold text-gray-800">Dashboard Overview</h2>
+                    <p class="text-gray-600">Welcome back! Here's what's happening with your platform.</p>
+                </div>
+
+                <!-- Key Metrics Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                    <!-- Total Revenue Card -->
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center">
+                                <div class="p-3 bg-green-100 rounded-lg">
+                                    <i class="fas fa-dollar-sign text-green-600"></i>
+                                </div>
+                            </div>
+                            <span class="text-sm text-green-600 font-semibold">+12.5%</span>
+                        </div>
+                        <h3 class="text-2xl font-bold text-gray-800">$45,231</h3>
+                        <p class="text-gray-600 text-sm">Total Revenue</p>
+                    </div>
+
+                    <!-- Active Users Card -->
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center">
+                                <div class="p-3 bg-blue-100 rounded-lg">
+                                    <i class="fas fa-users text-blue-600"></i>
+                                </div>
+                            </div>
+                            <span class="text-sm text-blue-600 font-semibold">+23.1%</span>
+                        </div>
+                        <h3 class="text-2xl font-bold text-gray-800">2,543</h3>
+                        <p class="text-gray-600 text-sm">Active Users</p>
+                    </div>
+
+                    <!-- Tools Created Card -->
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center">
+                                <div class="p-3 bg-purple-100 rounded-lg">
+                                    <i class="fas fa-tools text-purple-600"></i>
+                                </div>
+                            </div>
+                            <span class="text-sm text-purple-600 font-semibold">+18.7%</span>
+                        </div>
+                        <h3 class="text-2xl font-bold text-gray-800">1,893</h3>
+                        <p class="text-gray-600 text-sm">Tools Created</p>
+                    </div>
+
+                    <!-- API Calls Card -->
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center">
+                                <div class="p-3 bg-orange-100 rounded-lg">
+                                    <i class="fas fa-code text-orange-600"></i>
+                                </div>
+                            </div>
+                            <span class="text-sm text-orange-600 font-semibold">+45.2%</span>
+                        </div>
+                        <h3 class="text-2xl font-bold text-gray-800">3.2M</h3>
+                        <p class="text-gray-600 text-sm">API Calls Today</p>
+                    </div>
+                </div>
+
+                <!-- Charts Row -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                    <!-- Revenue Chart -->
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold text-gray-800">Revenue Overview</h3>
+                            <select class="text-sm border-gray-300 rounded-md">
+                                <option>Last 7 days</option>
+                                <option>Last 30 days</option>
+                                <option>Last 90 days</option>
+                            </select>
+                        </div>
+                        <canvas id="revenueChart" height="150"></canvas>
+                    </div>
+
+                    <!-- User Growth Chart -->
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold text-gray-800">User Growth</h3>
+                            <select class="text-sm border-gray-300 rounded-md">
+                                <option>Last 7 days</option>
+                                <option>Last 30 days</option>
+                                <option>Last 90 days</option>
+                            </select>
+                        </div>
+                        <canvas id="userGrowthChart" height="150"></canvas>
+                    </div>
+                </div>
+
+                <!-- Recent Activity & Quick Actions -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Recent Tools -->
+                    <div class="bg-white rounded-lg shadow">
+                        <div class="p-6 border-b">
+                            <h3 class="text-lg font-semibold text-gray-800">Recent Tools</h3>
+                        </div>
+                        <div class="p-6">
+                            <div class="space-y-4">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="font-medium text-gray-800">Story Writer Pro</p>
+                                        <p class="text-sm text-gray-600">Created by John Doe</p>
+                                    </div>
+                                    <span class="px-2 py-1 text-xs bg-green-100 text-green-600 rounded">Active</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="font-medium text-gray-800">Business Analyzer</p>
+                                        <p class="text-sm text-gray-600">Created by Jane Smith</p>
+                                    </div>
+                                    <span class="px-2 py-1 text-xs bg-yellow-100 text-yellow-600 rounded">Pending</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="font-medium text-gray-800">Code Generator</p>
+                                        <p class="text-sm text-gray-600">Created by Mike Johnson</p>
+                                    </div>
+                                    <span class="px-2 py-1 text-xs bg-green-100 text-green-600 rounded">Active</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="font-medium text-gray-800">Marketing Assistant</p>
+                                        <p class="text-sm text-gray-600">Created by Sarah Lee</p>
+                                    </div>
+                                    <span class="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded">Draft</span>
+                                </div>
+                            </div>
+                            <button class="mt-4 w-full text-center text-sm text-indigo-600 hover:text-indigo-800">View all tools →</button>
+                        </div>
+                    </div>
+
+                    <!-- Recent Users -->
+                    <div class="bg-white rounded-lg shadow">
+                        <div class="p-6 border-b">
+                            <h3 class="text-lg font-semibold text-gray-800">New Users</h3>
+                        </div>
+                        <div class="p-6">
+                            <div class="space-y-4">
+                                <div class="flex items-center space-x-3">
+                                    <img class="h-10 w-10 rounded-full" src="https://ui-avatars.com/api/?name=Alex+Chen" alt="">
+                                    <div class="flex-1">
+                                        <p class="font-medium text-gray-800">Alex Chen</p>
+                                        <p class="text-sm text-gray-600">alex@example.com</p>
+                                    </div>
+                                    <span class="text-xs text-gray-500">2h ago</span>
+                                </div>
+                                <div class="flex items-center space-x-3">
+                                    <img class="h-10 w-10 rounded-full" src="https://ui-avatars.com/api/?name=Maria+Garcia" alt="">
+                                    <div class="flex-1">
+                                        <p class="font-medium text-gray-800">Maria Garcia</p>
+                                        <p class="text-sm text-gray-600">maria@example.com</p>
+                                    </div>
+                                    <span class="text-xs text-gray-500">5h ago</span>
+                                </div>
+                                <div class="flex items-center space-x-3">
+                                    <img class="h-10 w-10 rounded-full" src="https://ui-avatars.com/api/?name=David+Kim" alt="">
+                                    <div class="flex-1">
+                                        <p class="font-medium text-gray-800">David Kim</p>
+                                        <p class="text-sm text-gray-600">david@example.com</p>
+                                    </div>
+                                    <span class="text-xs text-gray-500">8h ago</span>
+                                </div>
+                                <div class="flex items-center space-x-3">
+                                    <img class="h-10 w-10 rounded-full" src="https://ui-avatars.com/api/?name=Lisa+Brown" alt="">
+                                    <div class="flex-1">
+                                        <p class="font-medium text-gray-800">Lisa Brown</p>
+                                        <p class="text-sm text-gray-600">lisa@example.com</p>
+                                    </div>
+                                    <span class="text-xs text-gray-500">1d ago</span>
+                                </div>
+                            </div>
+                            <button class="mt-4 w-full text-center text-sm text-indigo-600 hover:text-indigo-800">View all users →</button>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="bg-white rounded-lg shadow">
+                        <div class="p-6 border-b">
+                            <h3 class="text-lg font-semibold text-gray-800">Quick Actions</h3>
+                        </div>
+                        <div class="p-6">
+                            <div class="space-y-3">
+                                <button onclick="window.location.href='/prompt-engineer-v2.html'" class="w-full text-left px-4 py-3 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition">
+                                    <div class="flex items-center space-x-3">
+                                        <i class="fas fa-plus-circle text-indigo-600"></i>
+                                        <span class="text-gray-800">Create New Tool</span>
+                                    </div>
+                                </button>
+                                <button onclick="openModal('add-user-modal')" class="w-full text-left px-4 py-3 bg-green-50 hover:bg-green-100 rounded-lg transition">
+                                    <div class="flex items-center space-x-3">
+                                        <i class="fas fa-user-plus text-green-600"></i>
+                                        <span class="text-gray-800">Add New User</span>
+                                    </div>
+                                </button>
+                                <button onclick="openModal('add-client-modal')" class="w-full text-left px-4 py-3 bg-blue-50 hover:bg-blue-100 rounded-lg transition">
+                                    <div class="flex items-center space-x-3">
+                                        <i class="fas fa-building text-blue-600"></i>
+                                        <span class="text-gray-800">Add New Client</span>
+                                    </div>
+                                </button>
+                                <button onclick="openModal('generate-report-modal')" class="w-full text-left px-4 py-3 bg-purple-50 hover:bg-purple-100 rounded-lg transition">
+                                    <div class="flex items-center space-x-3">
+                                        <i class="fas fa-file-download text-purple-600"></i>
+                                        <span class="text-gray-800">Generate Report</span>
+                                    </div>
+                                </button>
+                                <button onclick="openModal('deploy-tool-modal')" class="w-full text-left px-4 py-3 bg-orange-50 hover:bg-orange-100 rounded-lg transition">
+                                    <div class="flex items-center space-x-3">
+                                        <i class="fas fa-rocket text-orange-600"></i>
+                                        <span class="text-gray-800">Deploy Tool</span>
+                                    </div>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- System Status -->
+                <div class="mt-6 bg-white rounded-lg shadow">
+                    <div class="p-6 border-b">
+                        <h3 class="text-lg font-semibold text-gray-800">System Status</h3>
+                    </div>
+                    <div class="p-6">
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                            <div class="text-center">
+                                <div class="inline-flex items-center justify-center w-12 h-12 bg-green-100 rounded-full mb-2">
+                                    <i class="fas fa-server text-green-600"></i>
+                                </div>
+                                <p class="text-sm text-gray-600">API Server</p>
+                                <p class="font-semibold text-green-600">Operational</p>
+                            </div>
+                            <div class="text-center">
+                                <div class="inline-flex items-center justify-center w-12 h-12 bg-green-100 rounded-full mb-2">
+                                    <i class="fas fa-database text-green-600"></i>
+                                </div>
+                                <p class="text-sm text-gray-600">Database</p>
+                                <p class="font-semibold text-green-600">Healthy</p>
+                            </div>
+                            <div class="text-center">
+                                <div class="inline-flex items-center justify-center w-12 h-12 bg-yellow-100 rounded-full mb-2">
+                                    <i class="fas fa-shield-alt text-yellow-600"></i>
+                                </div>
+                                <p class="text-sm text-gray-600">SSL Certificates</p>
+                                <p class="font-semibold text-yellow-600">Expiring Soon</p>
+                            </div>
+                            <div class="text-center">
+                                <div class="inline-flex items-center justify-center w-12 h-12 bg-green-100 rounded-full mb-2">
+                                    <i class="fas fa-cloud text-green-600"></i>
+                                </div>
+                                <p class="text-sm text-gray-600">CDN</p>
+                                <p class="font-semibold text-green-600">Active</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modals (Hidden by default) -->
+    <!-- Add User Modal -->
+    <div id="add-user-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 class="text-lg font-semibold mb-4">Add New User</h3>
+            <form>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Email</label>
+                        <input type="email" class="mt-1 w-full border-gray-300 rounded-md" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Full Name</label>
+                        <input type="text" class="mt-1 w-full border-gray-300 rounded-md" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Role</label>
+                        <select class="mt-1 w-full border-gray-300 rounded-md">
+                            <option>User</option>
+                            <option>Admin</option>
+                            <option>Super Admin</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="mt-6 flex justify-end space-x-3">
+                    <button type="button" onclick="closeModal('add-user-modal')" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">Add User</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Toggle submenu
+        function toggleSubmenu(menuId) {
+            const menu = document.getElementById(menuId);
+            menu.classList.toggle('hidden');
+        }
+
+        // Toggle user menu
+        function toggleUserMenu() {
+            const menu = document.getElementById('user-menu');
+            menu.classList.toggle('hidden');
+        }
+
+        // Toggle notifications
+        function toggleNotifications() {
+            // Implementation for notifications panel
+            alert('Notifications panel coming soon!');
+        }
+
+        // Modal functions
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.remove('hidden');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+        }
+
+        // Initialize Revenue Chart
+        const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+        new Chart(revenueCtx, {
+            type: 'line',
+            data: {
+                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                datasets: [{
+                    label: 'Revenue',
+                    data: [3200, 4500, 3800, 5100, 4300, 6200, 5800],
+                    borderColor: 'rgb(79, 70, 229)',
+                    backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '$' + value;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Initialize User Growth Chart
+        const userGrowthCtx = document.getElementById('userGrowthChart').getContext('2d');
+        new Chart(userGrowthCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                datasets: [{
+                    label: 'New Users',
+                    data: [45, 52, 38, 65, 48, 72, 58],
+                    backgroundColor: 'rgba(59, 130, 246, 0.8)'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // Initialize dashboard data
+        async function loadDashboardData() {
+            try {
+                const response = await fetch('/api/dashboard/stats', {
+                    headers: {
+                        'Authorization': 'Bearer ' + localStorage.getItem('token')
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    // Update dashboard with real data
+                    console.log('Dashboard data loaded:', data);
+                }
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+            }
+        }
+
+        // Load data when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            loadDashboardData();
+        });
+    </script>
+</body>
+</html>

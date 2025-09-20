@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout - Prompt Machine</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Stripe -->
+    <script src="https://js.stripe.com/v3/"></script>
+    
+    <!-- Square -->
+    <script src="https://sandbox.web.squarecdn.com/v1/square.js"></script>
+    
+    <!-- PayPal -->
+    <script src="https://www.paypal.com/sdk/js?client-id=YOUR_PAYPAL_CLIENT_ID&currency=USD"></script>
+</head>
+<body class="bg-gray-50">
+    <div class="min-h-screen py-12">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <!-- Header -->
+            <div class="text-center mb-8">
+                <h1 class="text-3xl font-bold text-gray-900">Complete Your Purchase</h1>
+                <p class="mt-2 text-gray-600">Choose your preferred payment method</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Order Summary -->
+                <div class="lg:col-span-2">
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <h2 class="text-xl font-semibold mb-4">Order Summary</h2>
+                        
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-center pb-4 border-b">
+                                <div>
+                                    <h3 class="font-medium" id="plan-name">Pro Plan</h3>
+                                    <p class="text-sm text-gray-600" id="plan-description">Unlimited tools, advanced features</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="font-semibold" id="plan-price">$29.99</p>
+                                    <p class="text-sm text-gray-600" id="billing-cycle">/month</p>
+                                </div>
+                            </div>
+
+                            <!-- Processor Fee Comparison -->
+                            <div class="bg-blue-50 rounded-lg p-4">
+                                <h4 class="font-medium text-blue-900 mb-2">Payment Processing Fees</h4>
+                                <div class="space-y-2 text-sm">
+                                    <div class="flex justify-between">
+                                        <span class="text-blue-700">Stripe (2.9% + $0.30)</span>
+                                        <span id="stripe-fee" class="font-medium">$1.17</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-blue-700">Square (2.9% + $0.30)</span>
+                                        <span id="square-fee" class="font-medium">$1.17</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-blue-700">PayPal (3.49% + $0.49)</span>
+                                        <span id="paypal-fee" class="font-medium">$1.54</span>
+                                    </div>
+                                </div>
+                                <p class="text-xs text-blue-600 mt-2">
+                                    <i class="fas fa-info-circle"></i> We show fees for transparency. You only pay the plan price.
+                                </p>
+                            </div>
+
+                            <!-- Payment Method Selection -->
+                            <div>
+                                <h3 class="font-medium mb-3">Select Payment Method</h3>
+                                <div class="space-y-2">
+                                    <!-- Stripe Option -->
+                                    <label class="flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50 payment-option" data-processor="stripe">
+                                        <input type="radio" name="payment-processor" value="stripe" class="mr-3">
+                                        <div class="flex-1">
+                                            <div class="flex items-center">
+                                                <i class="fab fa-stripe text-2xl text-indigo-600 mr-3"></i>
+                                                <div>
+                                                    <p class="font-medium">Pay with Stripe</p>
+                                                    <p class="text-sm text-gray-600">Credit/Debit Card, Apple Pay, Google Pay</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="text-right">
+                                            <span class="px-2 py-1 bg-green-100 text-green-700 text-xs rounded">Popular</span>
+                                        </div>
+                                    </label>
+
+                                    <!-- Square Option -->
+                                    <label class="flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50 payment-option" data-processor="square">
+                                        <input type="radio" name="payment-processor" value="square" class="mr-3">
+                                        <div class="flex-1">
+                                            <div class="flex items-center">
+                                                <i class="fas fa-square text-2xl text-black mr-3"></i>
+                                                <div>
+                                                    <p class="font-medium">Pay with Square</p>
+                                                    <p class="text-sm text-gray-600">Credit/Debit Card, Digital Wallets</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="text-right">
+                                            <span class="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded">Secure</span>
+                                        </div>
+                                    </label>
+
+                                    <!-- PayPal Option -->
+                                    <label class="flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50 payment-option" data-processor="paypal">
+                                        <input type="radio" name="payment-processor" value="paypal" class="mr-3">
+                                        <div class="flex-1">
+                                            <div class="flex items-center">
+                                                <i class="fab fa-paypal text-2xl text-blue-600 mr-3"></i>
+                                                <div>
+                                                    <p class="font-medium">Pay with PayPal</p>
+                                                    <p class="text-sm text-gray-600">PayPal Balance, Bank Account, Cards</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="text-right">
+                                            <span class="px-2 py-1 bg-yellow-100 text-yellow-700 text-xs rounded">Trusted</span>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Payment Forms (Initially Hidden) -->
+                            
+                            <!-- Stripe Payment Form -->
+                            <div id="stripe-form" class="payment-form hidden">
+                                <h4 class="font-medium mb-3">Card Information</h4>
+                                <div class="space-y-3">
+                                    <div id="stripe-card-element" class="p-3 border rounded-md"></div>
+                                    <div id="stripe-card-errors" class="text-red-600 text-sm"></div>
+                                    <div class="flex items-center">
+                                        <input type="checkbox" id="stripe-save-card" class="mr-2">
+                                        <label for="stripe-save-card" class="text-sm text-gray-600">
+                                            Save card for future purchases
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Square Payment Form -->
+                            <div id="square-form" class="payment-form hidden">
+                                <h4 class="font-medium mb-3">Card Information</h4>
+                                <div class="space-y-3">
+                                    <div id="square-card-container"></div>
+                                    <div id="square-card-errors" class="text-red-600 text-sm"></div>
+                                    <div class="flex items-center">
+                                        <input type="checkbox" id="square-save-card" class="mr-2">
+                                        <label for="square-save-card" class="text-sm text-gray-600">
+                                            Save card for future purchases
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- PayPal Payment Form -->
+                            <div id="paypal-form" class="payment-form hidden">
+                                <h4 class="font-medium mb-3">PayPal Checkout</h4>
+                                <div id="paypal-button-container"></div>
+                                <p class="text-sm text-gray-600 mt-2">
+                                    You will be redirected to PayPal to complete your purchase.
+                                </p>
+                            </div>
+
+                            <!-- Submit Button -->
+                            <div class="pt-4">
+                                <button id="submit-payment" class="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
+                                    Select Payment Method
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Security badges -->
+                    <div class="mt-6 flex items-center justify-center space-x-6">
+                        <div class="flex items-center text-gray-600">
+                            <i class="fas fa-lock text-green-600 mr-2"></i>
+                            <span class="text-sm">Secure Checkout</span>
+                        </div>
+                        <div class="flex items-center text-gray-600">
+                            <i class="fas fa-shield-alt text-green-600 mr-2"></i>
+                            <span class="text-sm">PCI Compliant</span>
+                        </div>
+                        <div class="flex items-center text-gray-600">
+                            <i class="fas fa-certificate text-green-600 mr-2"></i>
+                            <span class="text-sm">SSL Encrypted</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sidebar -->
+                <div class="lg:col-span-1">
+                    <!-- Price Summary -->
+                    <div class="bg-white rounded-lg shadow p-6 mb-6">
+                        <h3 class="font-semibold mb-4">Price Summary</h3>
+                        <div class="space-y-2">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Subtotal</span>
+                                <span id="subtotal">$29.99</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Tax</span>
+                                <span id="tax">$0.00</span>
+                            </div>
+                            <div class="border-t pt-2 mt-2">
+                                <div class="flex justify-between font-semibold">
+                                    <span>Total</span>
+                                    <span id="total">$29.99</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Features Included -->
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <h3 class="font-semibold mb-4">What's Included</h3>
+                        <ul class="space-y-3">
+                            <li class="flex items-start">
+                                <i class="fas fa-check-circle text-green-500 mt-1 mr-3"></i>
+                                <span class="text-sm">Unlimited AI tool creation</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-check-circle text-green-500 mt-1 mr-3"></i>
+                                <span class="text-sm">Advanced analytics dashboard</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-check-circle text-green-500 mt-1 mr-3"></i>
+                                <span class="text-sm">Custom domain deployment</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-check-circle text-green-500 mt-1 mr-3"></i>
+                                <span class="text-sm">Priority support</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-check-circle text-green-500 mt-1 mr-3"></i>
+                                <span class="text-sm">Team collaboration features</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Trust Signals -->
+                    <div class="mt-6 text-center">
+                        <p class="text-sm text-gray-600 mb-3">Trusted by 10,000+ creators</p>
+                        <div class="flex justify-center space-x-2">
+                            <i class="fas fa-star text-yellow-400"></i>
+                            <i class="fas fa-star text-yellow-400"></i>
+                            <i class="fas fa-star text-yellow-400"></i>
+                            <i class="fas fa-star text-yellow-400"></i>
+                            <i class="fas fa-star text-yellow-400"></i>
+                        </div>
+                        <p class="text-sm text-gray-600 mt-2">4.9/5 rating</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Payment processor initialization
+        let selectedProcessor = null;
+        let stripe = null;
+        let stripeElements = null;
+        let stripeCardElement = null;
+        let squareCard = null;
+        let squarePayments = null;
+
+        // Get plan details from URL or session
+        const urlParams = new URLSearchParams(window.location.search);
+        const planId = urlParams.get('plan') || 'pro';
+        const amount = parseFloat(urlParams.get('amount') || '29.99');
+
+        // Calculate fees for each processor
+        function calculateFees(amount) {
+            return {
+                stripe: ((amount * 0.029) + 0.30).toFixed(2),
+                square: ((amount * 0.029) + 0.30).toFixed(2),
+                paypal: ((amount * 0.0349) + 0.49).toFixed(2)
+            };
+        }
+
+        // Update fee display
+        const fees = calculateFees(amount);
+        document.getElementById('stripe-fee').textContent = `$${fees.stripe}`;
+        document.getElementById('square-fee').textContent = `$${fees.square}`;
+        document.getElementById('paypal-fee').textContent = `$${fees.paypal}`;
+
+        // Initialize Stripe
+        async function initStripe() {
+            const response = await fetch('/api/billing/stripe/setup-intent', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + localStorage.getItem('token')
+                }
+            });
+
+            const data = await response.json();
+            
+            stripe = Stripe('YOUR_STRIPE_PUBLISHABLE_KEY');
+            stripeElements = stripe.elements();
+            
+            stripeCardElement = stripeElements.create('card', {
+                style: {
+                    base: {
+                        fontSize: '16px',
+                        color: '#32325d',
+                        '::placeholder': {
+                            color: '#aab7c4'
+                        }
+                    }
+                }
+            });
+            
+            stripeCardElement.mount('#stripe-card-element');
+            
+            stripeCardElement.on('change', function(event) {
+                const errorElement = document.getElementById('stripe-card-errors');
+                if (event.error) {
+                    errorElement.textContent = event.error.message;
+                } else {
+                    errorElement.textContent = '';
+                }
+            });
+        }
+
+        // Initialize Square
+        async function initSquare() {
+            squarePayments = Square.payments('YOUR_SQUARE_APPLICATION_ID', 'YOUR_SQUARE_LOCATION_ID');
+            
+            squareCard = await squarePayments.card();
+            await squareCard.attach('#square-card-container');
+            
+            squareCard.addEventListener('cardBrandChanged', function(event) {
+                // Handle card brand change
+            });
+        }
+
+        // Initialize PayPal
+        function initPayPal() {
+            paypal.Buttons({
+                createOrder: function(data, actions) {
+                    return actions.order.create({
+                        purchase_units: [{
+                            amount: {
+                                value: amount.toFixed(2)
+                            }
+                        }]
+                    });
+                },
+                onApprove: function(data, actions) {
+                    return actions.order.capture().then(function(details) {
+                        // Handle successful payment
+                        processPayPalPayment(details);
+                    });
+                },
+                onError: function(err) {
+                    console.error('PayPal error:', err);
+                    alert('Payment failed. Please try again.');
+                }
+            }).render('#paypal-button-container');
+        }
+
+        // Payment option selection
+        document.querySelectorAll('.payment-option').forEach(option => {
+            option.addEventListener('click', async function() {
+                selectedProcessor = this.dataset.processor;
+                
+                // Update UI
+                document.querySelectorAll('.payment-option').forEach(opt => {
+                    opt.classList.remove('border-indigo-500', 'bg-indigo-50');
+                });
+                this.classList.add('border-indigo-500', 'bg-indigo-50');
+                
+                // Hide all payment forms
+                document.querySelectorAll('.payment-form').forEach(form => {
+                    form.classList.add('hidden');
+                });
+                
+                // Show selected payment form
+                const formId = `${selectedProcessor}-form`;
+                document.getElementById(formId).classList.remove('hidden');
+                
+                // Initialize payment processor if needed
+                switch(selectedProcessor) {
+                    case 'stripe':
+                        if (!stripe) await initStripe();
+                        document.getElementById('submit-payment').textContent = 'Pay with Stripe';
+                        break;
+                    case 'square':
+                        if (!squareCard) await initSquare();
+                        document.getElementById('submit-payment').textContent = 'Pay with Square';
+                        break;
+                    case 'paypal':
+                        if (!document.querySelector('#paypal-button-container iframe')) {
+                            initPayPal();
+                        }
+                        document.getElementById('submit-payment').style.display = 'none';
+                        break;
+                }
+                
+                document.getElementById('submit-payment').disabled = false;
+            });
+        });
+
+        // Process payment
+        document.getElementById('submit-payment').addEventListener('click', async function() {
+            if (!selectedProcessor || selectedProcessor === 'paypal') return;
+            
+            this.disabled = true;
+            this.textContent = 'Processing...';
+            
+            try {
+                let paymentResult;
+                
+                switch(selectedProcessor) {
+                    case 'stripe':
+                        paymentResult = await processStripePayment();
+                        break;
+                    case 'square':
+                        paymentResult = await processSquarePayment();
+                        break;
+                }
+                
+                if (paymentResult.success) {
+                    // Redirect to success page
+                    window.location.href = `/payment/success?payment=${paymentResult.transactionId}`;
+                } else {
+                    throw new Error(paymentResult.error || 'Payment failed');
+                }
+                
+            } catch (error) {
+                console.error('Payment error:', error);
+                alert(`Payment failed: ${error.message}`);
+                this.disabled = false;
+                this.textContent = `Pay with ${selectedProcessor.charAt(0).toUpperCase() + selectedProcessor.slice(1)}`;
+            }
+        });
+
+        // Process Stripe payment
+        async function processStripePayment() {
+            const { error, paymentMethod } = await stripe.createPaymentMethod({
+                type: 'card',
+                card: stripeCardElement
+            });
+            
+            if (error) {
+                throw new Error(error.message);
+            }
+            
+            const response = await fetch('/api/billing/process-payment', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + localStorage.getItem('token')
+                },
+                body: JSON.stringify({
+                    processor: 'stripe',
+                    amount: amount,
+                    paymentMethodId: paymentMethod.id,
+                    description: `${planId} Plan Subscription`,
+                    metadata: {
+                        planId: planId
+                    }
+                })
+            });
+            
+            return await response.json();
+        }
+
+        // Process Square payment
+        async function processSquarePayment() {
+            const result = await squareCard.tokenize();
+            
+            if (result.status !== 'OK') {
+                throw new Error(result.errors[0].message);
+            }
+            
+            const response = await fetch('/api/billing/process-payment', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + localStorage.getItem('token')
+                },
+                body: JSON.stringify({
+                    processor: 'square',
+                    amount: amount,
+                    sourceId: result.token,
+                    description: `${planId} Plan Subscription`,
+                    metadata: {
+                        planId: planId
+                    }
+                })
+            });
+            
+            return await response.json();
+        }
+
+        // Process PayPal payment
+        async function processPayPalPayment(details) {
+            const response = await fetch('/api/billing/process-payment', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + localStorage.getItem('token')
+                },
+                body: JSON.stringify({
+                    processor: 'paypal',
+                    amount: amount,
+                    orderId: details.id,
+                    description: `${planId} Plan Subscription`,
+                    metadata: {
+                        planId: planId,
+                        payerId: details.payer.payer_id
+                    }
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                window.location.href = `/payment/success?payment=${result.data.transactionId}`;
+            } else {
+                alert('Payment processing failed. Please contact support.');
+            }
+        }
+    </script>
+</body>
+</html>
