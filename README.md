@@ -1,23 +1,24 @@
-# 🚀 Prompt Machine v1.5.0rc
+# 🚀 Prompt Machine v2.0.0rc
 
-[![Version](https://img.shields.io/badge/version-1.5.0rc-blue.svg)](https://github.com/yourusername/prompt-machine)
+[![Version](https://img.shields.io/badge/version-2.0.0rc-blue.svg)](https://github.com/yourusername/prompt-machine)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/node.js-%3E%3D18.0.0-brightgreen.svg)](https://nodejs.org/)
 [![PostgreSQL](https://img.shields.io/badge/postgresql-%3E%3D14.0-blue.svg)](https://www.postgresql.org/)
 
-> Professional AI tool builder and deployment platform. Create, customize, and deploy AI-powered tools with multi-step workflows using Prompt Engineer v6.1.0rc.
+> Professional AI tool builder and deployment platform. Create, customize, and deploy AI-powered tools with multi-step workflows using enhanced Prompt Engineer v2.0.0rc with full authentication and dashboard systems.
 
 ## 🌟 Features
 
 ### Core Platform
 - **🎯 Multi-Step Tool Builder**: Create complex AI workflows with guided user interfaces
-- **⚡ Instant Deployment**: Deploy tools to custom subdomains with one click
+- **⚡ Instant Deployment**: Deploy tools to custom subdomains with one click  
 - **🤖 AI-Powered Generation**: Intelligent field recommendations and form building
 - **💰 Monetization Ready**: Built-in advertising system with Google AdSense integration
-- **📊 Analytics Dashboard**: Real-time analytics with comprehensive reporting
-- **🔐 Secure Authentication**: JWT-based user management and access control
+- **📊 Enhanced Dashboard**: Real-time statistics with user-specific counters and analytics
+- **🔐 Bulletproof Authentication**: Fixed login system with JWT-based user management
 - **👥 Advanced User Management**: Role-based permissions and access control
 - **📦 Package Management**: Subscription tiers and feature control
+- **🛠️ V2 API System**: Enhanced Prompt Engineer V2 with full CRUD operations
 
 ### Advanced Capabilities
 - **📝 Dynamic Form Generation**: AI-generated forms with smart field types
@@ -160,6 +161,19 @@ DELETE /api/v6/projects/:id      # Delete project
 POST   /api/v6/projects/:id/deploy # Deploy project
 ```
 
+### Dashboard (V2)
+```bash
+GET    /api/v2/dashboard/stats   # Get user dashboard statistics
+```
+
+### Prompt Engineer (V2)
+```bash
+GET    /api/v2/prompt-engineer/projects         # List user projects
+POST   /api/v2/prompt-engineer/create-project   # Create new project
+POST   /api/v2/prompt-engineer/analyze-request  # AI analysis
+GET    /api/v2/prompt-engineer/templates        # Get tool templates
+```
+
 ### Public Tools
 ```bash
 GET    /api/public/tools/:subdomain    # Get tool configuration
@@ -286,7 +300,19 @@ npm run test:coverage
 
 ## 📋 Changelog
 
-### v1.5.0rc - Release Candidate
+### v2.0.0rc - Major Authentication & Dashboard Release
+- 🔥 **FIXED: Complete Authentication System**: Resolved 502 Bad Gateway errors and login flow
+- 🔧 **Express Trust Proxy**: Fixed nginx reverse proxy configuration for proper rate limiting
+- 📊 **Dashboard Stats API**: New `/api/v2/dashboard/stats` endpoint with user-specific statistics
+- 🛠️ **Enhanced V2 API**: Fully functional Prompt Engineer V2 routes with all features enabled
+- 🔐 **Security Hardening**: Rate limiting, CORS, input validation, and SQL injection protection
+- 📦 **Dependency Management**: Fixed missing @anthropic-ai/sdk and UUID compatibility issues
+- 🚀 **Frontend Token Handling**: Corrected JavaScript token access for seamless login experience
+- ⚡ **Universal Services**: Added Calculation Engine, Permission Manager, and Universal Generator
+- 🎯 **Assessment Engine**: Advanced field recommendations and AI-powered form generation
+- 🔄 **Zero Downtime**: All functionality restored without disabling features
+
+### v1.5.0rc - Release Candidate  
 - ✅ **Prompt Engineer v6.1.0rc**: Enhanced multi-step tool builder with improved functionality
 - ✅ **Advanced User Management**: Role-based access control and permission systems
 - ✅ **Package Management**: Subscription tiers and feature control
@@ -307,7 +333,16 @@ npm run test:coverage
 
 ## 🐛 Known Issues
 
-- None currently reported
+### Resolved in v2.0.0rc ✅
+- ~~502 Bad Gateway authentication errors~~ → **FIXED**
+- ~~Dashboard statistics not loading~~ → **FIXED** 
+- ~~V2 API routes disabled~~ → **FIXED**
+- ~~Frontend token handling errors~~ → **FIXED**
+
+### Current Status
+- No critical issues reported in v2.0.0rc
+- All authentication and dashboard functionality working properly
+- Complete API ecosystem operational
 
 ## 📞 Support
 
